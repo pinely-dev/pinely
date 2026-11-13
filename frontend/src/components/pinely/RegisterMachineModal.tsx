@@ -33,7 +33,7 @@ export function RegisterMachineModal({
   onSuccess,
 }: RegisterMachineModalProps) {
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<"cli" | "manual">("cli");
+  const [activeTab, setActiveTab] = useState<"cli" | "manual">("manual");
   const [copied, setCopied] = useState(false);
 
   // Manual form state
@@ -219,7 +219,7 @@ export function RegisterMachineModal({
               transition: "all 0.15s ease",
             }}
           >
-            ⚡ Hardware CLI (Recommended)
+            ⚡ Command Line (Beta)
           </button>
           <button
             type="button"
@@ -241,11 +241,11 @@ export function RegisterMachineModal({
               transition: "all 0.15s ease",
             }}
           >
-            📝 Manual On-Chain Form
+            📝 On-Chain Form (Recommended)
           </button>
         </div>
 
-        {/* TAB 1: HARDWARE CLI */}
+        {/* TAB 1: COMMAND LINE (the CLI prints a registration transaction; it never sends one) */}
         {activeTab === "cli" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             <div
@@ -265,7 +265,7 @@ export function RegisterMachineModal({
                 }}
               >
                 <span className="font-mono text-xs" style={{ color: "var(--mut)" }}>
-                  RUN ON ROVER / EDGE HARDWARE
+                  RUN ON THE MACHINE OR A DEV BOX
                 </span>
                 <button
                   type="button"
@@ -322,9 +322,10 @@ export function RegisterMachineModal({
                   1
                 </span>
                 <div>
-                  <b style={{ color: "#ffffff" }}>Generate Hardware Keys:</b> The CLI creates an
-                  isolated session key inside the device TPM/Secure Element. Private keys never
-                  leave physical hardware.
+                  <b style={{ color: "#ffffff" }}>Create a Machine Identity:</b> The CLI generates a
+                  software session key for this run (pass --key to reuse one). It is never saved.
+                  Hardware key storage (TPM / Secure Element) is not available yet, so use the CLI
+                  for development only.
                 </div>
               </div>
 
@@ -347,8 +348,10 @@ export function RegisterMachineModal({
                   2
                 </span>
                 <div>
-                  <b style={{ color: "#ffffff" }}>Compute Counterfactual Account:</b> The device
-                  calculates its deterministic CREATE2 address from PinelyAccountFactory.
+                  <b style={{ color: "#ffffff" }}>Read the Output:</b> It prints the machine ID, the
+                  machine account and a registration transaction (to and data). Without --account
+                  the account is the signer address, a development shortcut. The CLI does not send
+                  any transaction.
                 </div>
               </div>
 
@@ -371,9 +374,10 @@ export function RegisterMachineModal({
                   3
                 </span>
                 <div>
-                  <b style={{ color: "#ffffff" }}>Sign Onchain Registration:</b> Operator confirms
-                  registration with 2 {stablecoinSymbol} anti-sybil fee. Once mined, telemetry
-                  appears in this desk.
+                  <b style={{ color: "#ffffff" }}>Register Onchain:</b> The registry accepts a
+                  registration only from the machine account itself or with the account owner&apos;s
+                  signature, so finish in the On-Chain Form. Registration costs a 2{" "}
+                  {stablecoinSymbol} anti-sybil fee. Once mined, telemetry appears in this desk.
                 </div>
               </div>
             </div>
@@ -393,7 +397,7 @@ export function RegisterMachineModal({
                 onClick={() => setActiveTab("manual")}
                 style={{ minHeight: "44px", fontSize: "13px" }}
               >
-                Switch to Manual On-Chain Form →
+                Switch to the On-Chain Form →
               </button>
               <button
                 type="button"
@@ -435,13 +439,13 @@ export function RegisterMachineModal({
                 className="font-mono text-xs"
                 style={{ color: "var(--mut)", textTransform: "uppercase" }}
               >
-                Step 2 · Session Key Address (TPM Hardware Signer)
+                Step 2 · Session Key Address (Machine Signer)
               </span>
               <input
                 className="fleet-input font-mono"
                 value={signer}
                 onChange={(e) => setSigner(e.target.value)}
-                placeholder="0x… (Hardware Signer EOA)"
+                placeholder="0x… (Machine Signer Address)"
                 spellCheck={false}
                 required
               />

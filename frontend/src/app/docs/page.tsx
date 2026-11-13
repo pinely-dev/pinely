@@ -123,10 +123,11 @@ export default function DocsPage() {
   const explorerUrl = activeChain.blockExplorers.default.url;
 
   const codeSnippets = {
-    ts: `// 1. Install the SDK
-bun add @pinely-protocol/sdk@beta
+    ts: `// 1. Install the SDK (beta, not externally audited)
+bun add @pinely-protocol/sdk@beta   // or: npm install @pinely-protocol/sdk@beta
 
 // 2. Connect. The development key store is for testing only: never use it in production.
+//    Key stores of type "tpm" fail closed: they throw when no hardware module is present.
 import { Pinely } from "@pinely-protocol/sdk";
 
 const pinely = await Pinely.connect({
@@ -153,10 +154,11 @@ console.log(result.status, result.txHash);
 // pinely pay --url https://facilitator.example/v1/charge/dock-001 \\
 //   --max-amount 100000 --facilitator https://facilitator.example`,
 
-    py: `# 1. Install from the repository
-pip install -e sdk-python
+    py: `# 1. Install from PyPI (beta, not externally audited)
+pip install pinely-sdk
 
 # 2. Connect. The Python SDK keeps the key in memory: for development only.
+#    It covers signing and HTTP 402 payments; it has no onchain reads or hardware key store yet.
 from pinely_sdk import Pinely
 
 pinely = Pinely.connect(
@@ -179,6 +181,7 @@ result = machine.pay(
 print(result["status"], result.get("txHash"))`,
 
     ros2: `# 1. Launch the PINELY ROS2 node
+#    Not published to a package index yet: build it from the ros2/ folder of the repository.
 ros2 run pinely_ros2 pinely_node --ros-args \\
   -p operator:="0x..." \\
   -p registry_address:="0x..." \\
@@ -214,7 +217,8 @@ ros2 service call /pinely/pay_service pinely_ros2/srv/PayService \\
         <h1>From device to onchain wallet.</h1>
         <p>
           Comprehensive developer guides for hardware roboticists, smart contract engineers, and
-          fleet operators. Official SDK libraries available in TypeScript, Python, and ROS2.
+          fleet operators. SDKs for TypeScript and Python are published in beta; the ROS2 node is
+          available from the repository.
         </p>
       </section>
 
@@ -227,8 +231,9 @@ ros2 service call /pinely/pay_service pinely_ros2/srv/PayService \\
           <h2>Integrate in three lines of code.</h2>
           <p>
             The target design signs inside a hardware secure element so keys never leave the device.
-            That support is planned: the SDK key stores are software today. Gas is sponsored by the
-            PINELY Paymaster.
+            That support is planned: the SDK key stores are software today. Both published SDKs are
+            beta releases and have not been externally audited. Gas is sponsored by the PINELY
+            Paymaster.
           </p>
         </div>
 
@@ -238,7 +243,7 @@ ros2 service call /pinely/pay_service pinely_ros2/srv/PayService \\
             <div className="docs-tab-bar" style={{ position: "relative" }}>
               {[
                 { id: "ts", label: "TypeScript / CLI (@pinely-protocol/sdk)" },
-                { id: "py", label: "Python (pinely_sdk)" },
+                { id: "py", label: "Python (pinely-sdk)" },
                 { id: "ros2", label: "ROS2 Node (pinely_ros2)" },
               ].map((tab) => (
                 <button
