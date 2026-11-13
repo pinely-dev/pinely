@@ -12,6 +12,7 @@ import { BurnTracker } from "@/components/pinely/BurnTracker";
 import { Navbar } from "@/components/pinely/Navbar";
 import { PageBackground } from "@/components/pinely/PageBackground";
 import { Footer } from "@/components/pinely/Footer";
+import { TokenCa } from "@/components/pinely/TokenCa";
 
 const VOLUME_PRESETS = [100000, 250000, 500000, 1000000, 5000000];
 
@@ -577,10 +578,13 @@ export default function BurnPage() {
               gap: "16px",
             }}
           >
-            <p className="note">
-              STAGE 2 REHEARSAL · Token not yet launched. Official launchpad and contract address
-              TBA.
-            </p>
+            <div style={{ display: "grid", gap: "4px", maxWidth: "560px" }}>
+              <TokenCa variant="footer" />
+              <p className="note" style={{ marginTop: "8px" }}>
+                STAGE 2 REHEARSAL · BurnVault and PinelyStake are not deployed on mainnet yet, so
+                nothing is burned or staked onchain today.
+              </p>
+            </div>
             <div style={{ display: "flex", gap: "12px" }}>
               <Link href="/stake" className="btn dark" style={{ fontSize: "13px" }}>
                 Explore Reputational Staking →

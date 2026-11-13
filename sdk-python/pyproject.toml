@@ -1,17 +1,45 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pinely-sdk"
-version = "0.1.0"
-description = "PINELY Python SDK — Hardware & autonomous machine finance protocol on Robinhood Chain"
+# Single source of truth for the version: pinely_sdk/__init__.py (__version__).
+dynamic = ["version"]
+description = "PINELY Python SDK: EIP-712 signing and HTTP 402 payments for autonomous machines on Robinhood Chain"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "PINELY Engineering" }]
-dependencies = [
-    "web3>=7.0.0",
-    "eth-account>=0.13.0",
-    "requests>=2.31.0",
+keywords = ["pinely", "depin", "robinhood-chain", "erc-4337", "x402", "eip-712", "web3"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
 ]
+# Bounds are the ranges the test suite was run against (lowest and highest combination):
+#   web3 7.0.0 + eth-account 0.13.1 + requests 2.31.0, and web3 8.0.0 + eth-account 0.14.0 + requests 2.34.2.
+# eth-account 0.13.0 is NOT supported: it lacks eth_account.types and conflicts with web3 7.0.0.
+dependencies = [
+    "web3>=7.0.0,<9",
+    "eth-account>=0.13.1,<1",
+    "requests>=2.31.0,<3",
+]
+
+[project.urls]
+Homepage = "https://github.com/pinely-dev/pinely/tree/main/sdk-python#readme"
+Issues = "https://github.com/pinely-dev/pinely/issues"
+Source = "https://github.com/pinely-dev/pinely"
+
+[tool.setuptools.dynamic]
+version = { attr = "pinely_sdk.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["pinely_sdk*"]
+
+[tool.setuptools.package-data]
+pinely_sdk = ["py.typed"]

@@ -8,6 +8,10 @@ On-chain event indexer for PINELY, built on **Ponder**. It indexes the Robinhood
 - **Runtime:** Node.js 22 LTS
 - **Database:** PostgreSQL, schema `ponder` (separate from the backend's `app` schema). Never reuse a
   database from another deployment.
+- **Schema ownership:** the schema name is set in `ponder.schema.ts` with `onchainSchema` (default
+  `ponder`, or `PONDER_SCHEMA`). Ponder 0.7 ignores the connection string's `search_path`, so tables
+  declared with `onchainTable` would silently land in `public`. Ponder creates the tables itself; the
+  backend never creates a table in this schema.
 - **Framework:** Ponder `^0.7.17`
 - **Time-based polling:** blocks arrive about every 100 ms, so the indexer polls on a fixed interval
   (`POLLING_INTERVAL_MS`, default 2000 ms) with a request cap (`MAX_REQUESTS_PER_SECOND`, default 25)

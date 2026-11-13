@@ -1,4 +1,4 @@
-# @pinely/sdk
+# @pinely-protocol/sdk
 
 TypeScript SDK for **PINELY**: machine onboarding, session keys, EIP-712 swap signing and HTTP 402
 payments for physical machines on Robinhood Chain (testnet `46630`, mainnet `4663`).
@@ -6,19 +6,28 @@ payments for physical machines on Robinhood Chain (testnet `46630`, mainnet `466
 ## Install
 
 ```bash
-bun add @pinely/sdk
+bun add @pinely-protocol/sdk@beta
+# or: npm install @pinely-protocol/sdk@beta
+```
+
+This is a beta release (`0.1.0-beta.1`); use the `@beta` tag to keep receiving pre-releases. It is an ESM-only package for
+Node.js 20 or newer and ships its own TypeScript types. Run the CLI without installing:
+
+```bash
+npx @pinely-protocol/sdk@beta --help
+npx @pinely-protocol/sdk@beta machine create --name charger-01 --operator 0x...
 ```
 
 ## Quick start
 
 ```ts
-import { Pinely } from "@pinely/sdk";
+import { Pinely } from "@pinely-protocol/sdk";
 
 const pinely = await Pinely.connect({
   chain: "robinhoodTestnet",
   registryAddress: "0x...", // MachineRegistry (see shared/contracts after `bun run sync`)
   paymasterAddress: "0x...", // PinelyPaymaster
-  keyStore: { type: "tpm" }, // production: hardware module; "file-dev-only" is for development
+  keyStore: { type: "tpm" }, // production: needs a hardware module (throws without one); "file-dev-only" is for development
   rpcUrl: process.env.RPC_URL_ROBINHOOD_TESTNET,
 });
 
@@ -61,9 +70,19 @@ pinely sweep --sweeper 0x... --id 0x...
 
 ## Key storage
 
-`tpm` and `secure-element` key stores require a hardware module in production. See the repository's
-security notes before relying on them: the current implementation derives its key from a device salt and
-is **not** a substitute for a sealed TPM key.
+`tpm` and `secure-element` key stores **fail closed**: without a reachable hardware device and a device-unique
+salt they throw `HardwareSecurityModuleRequiredError`. A simulated enclave exists for tests only and must be
+requested explicitly with `simulatedEnclave: true`; it is rejected when `NODE_ENV=production`. Without a
+`deviceUniqueSalt` the simulated key is derived from a public default salt, so anyone can recompute it. Never
+use a simulated key for anything of value.
+
+See the repository's security notes before relying on the hardware path: the current implementation derives its
+key from a device salt and is **not** a substitute for a sealed TPM key.
+
+## Exit codes
+
+The CLI exits `0` on success and `1` on any failure, including a `pay` that does not settle. Errors print one
+line; set `PINELY_DEBUG=1` for the full stack trace.
 
 ## Tests
 

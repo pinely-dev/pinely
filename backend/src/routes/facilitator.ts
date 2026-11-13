@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import type { SerializedUserOperation } from "@pinely/sdk";
+import type { SerializedUserOperation } from "@pinely-protocol/sdk";
 import { type Address, type Hash, type Hex, isAddress } from "viem";
 import { getChainProfile } from "@pinely/shared/chains";
 import { getBackendChainId, notDeployedBody, resolveAddress } from "../lib/config";

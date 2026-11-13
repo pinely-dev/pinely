@@ -97,7 +97,6 @@ export function FieldScenarios() {
                   {sc.telemetry.map((t, tIdx) => (
                     <span key={tIdx} className={`bento-chip ${t.isDanger ? "danger-chip" : ""}`}>
                       {t.isDanger && <span className="pulse-beacon red" />}
-                      {!t.isDanger && <span className="pulse-beacon green" />}
                       <span>
                         {t.label}: {t.value}
                       </span>

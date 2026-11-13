@@ -6,7 +6,11 @@ import {
   type Address,
   type Hex,
 } from "viem";
-import { deserializeUserOperation, getUserOpHash, type SerializedUserOperation } from "@pinely/sdk";
+import {
+  deserializeUserOperation,
+  getUserOpHash,
+  type SerializedUserOperation,
+} from "@pinely-protocol/sdk";
 import { addresses, machineRegistryAbi, pinelyStakeAbi } from "@pinely/shared/contracts";
 
 /**

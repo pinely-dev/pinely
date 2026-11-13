@@ -1,7 +1,14 @@
-import { index, onchainTable } from "@ponder/core";
+import { index, onchainSchema } from "@ponder/core";
+
+/**
+ * Ponder 0.7 picks its Postgres schema from this file, never from the connection string: tables
+ * declared with `onchainTable` always land in `public`. The backend reads the indexer data from the
+ * `ponder` schema (`PONDER_SCHEMA`), so every table is declared inside that schema.
+ */
+export const ponderSchema = onchainSchema(process.env.PONDER_SCHEMA ?? "ponder");
 
 // PINELY Operators
-export const operators = onchainTable("operators", (p) => ({
+export const operators = ponderSchema.table("operators", (p) => ({
   id: p.text().primaryKey(), // Operator address lowercase
   guardian: p.text(),
   fleetFrozen: p.boolean().default(false).notNull(),
@@ -10,7 +17,7 @@ export const operators = onchainTable("operators", (p) => ({
 }));
 
 // PINELY Machines
-export const machines = onchainTable(
+export const machines = ponderSchema.table(
   "machines",
   (p) => ({
     id: p.text().primaryKey(), // machineId hex
@@ -38,7 +45,7 @@ export const machines = onchainTable(
 );
 
 // PINELY Swaps
-export const swaps = onchainTable(
+export const swaps = ponderSchema.table(
   "swaps",
   (p) => ({
     id: p.text().primaryKey(), // `${txHash}:${logIndex}`
@@ -64,7 +71,7 @@ export const swaps = onchainTable(
 );
 
 // PINELY Daily Machine Spend Tracking
-export const dailyMachineSpend = onchainTable(
+export const dailyMachineSpend = ponderSchema.table(
   "daily_machine_spend",
   (p) => ({
     id: p.text().primaryKey(), // `${machineId}:${day}`
@@ -80,7 +87,7 @@ export const dailyMachineSpend = onchainTable(
 );
 
 // PINELY Protocol Fees
-export const protocolFees = onchainTable(
+export const protocolFees = ponderSchema.table(
   "protocol_fees",
   (p) => ({
     id: p.text().primaryKey(), // `${txHash}:${logIndex}`
@@ -96,7 +103,7 @@ export const protocolFees = onchainTable(
 );
 
 // PINELY Policy Violations
-export const policyViolations = onchainTable("policy_violations", (p) => ({
+export const policyViolations = ponderSchema.table("policy_violations", (p) => ({
   id: p.text().primaryKey(), // `${txHash}:${logIndex}`
   machineId: p.text().notNull(),
   evidenceHash: p.text().notNull(),
@@ -106,7 +113,7 @@ export const policyViolations = onchainTable("policy_violations", (p) => ({
 }));
 
 // PINELY Burns
-export const burns = onchainTable("burns", (p) => ({
+export const burns = ponderSchema.table("burns", (p) => ({
   id: p.text().primaryKey(),
   source: p.text().notNull(),
   amountPinely: p.bigint().notNull(),
@@ -115,7 +122,7 @@ export const burns = onchainTable("burns", (p) => ({
 }));
 
 // PINELY Stakes
-export const stakes = onchainTable("stakes", (p) => ({
+export const stakes = ponderSchema.table("stakes", (p) => ({
   id: p.text().primaryKey(), // Operator address lowercase
   amountPinely: p.bigint().notNull(),
   unbondingAmount: p.bigint().default(0n).notNull(),
@@ -125,7 +132,7 @@ export const stakes = onchainTable("stakes", (p) => ({
 }));
 
 // PINELY Subscriptions (Fleet Pro & Pinely SDK)
-export const subscriptions = onchainTable(
+export const subscriptions = ponderSchema.table(
   "subscriptions",
   (p) => ({
     id: p.text().primaryKey(), // `${txHash}:${logIndex}`
@@ -146,7 +153,7 @@ export const subscriptions = onchainTable(
 );
 
 // PINELY Operator Fleet Plan Aggregates
-export const fleetPlans = onchainTable("fleet_plans", (p) => ({
+export const fleetPlans = ponderSchema.table("fleet_plans", (p) => ({
   id: p.text().primaryKey(), // fleetId lowercase hex
   owner: p.text().notNull(),
   fleetProValidUntil: p.bigint().default(0n).notNull(),
@@ -157,7 +164,7 @@ export const fleetPlans = onchainTable("fleet_plans", (p) => ({
 }));
 
 // PINELY Surplus Sweeps
-export const sweeps = onchainTable(
+export const sweeps = ponderSchema.table(
   "sweeps",
   (p) => ({
     id: p.text().primaryKey(), // `${txHash}:${logIndex}`
@@ -177,7 +184,7 @@ export const sweeps = onchainTable(
 );
 
 // PINELY Paymaster Gas Charges
-export const paymasterCharges = onchainTable(
+export const paymasterCharges = ponderSchema.table(
   "paymaster_charges",
   (p) => ({
     id: p.text().primaryKey(), // `${txHash}:${logIndex}`

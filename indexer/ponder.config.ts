@@ -65,7 +65,8 @@ function optionalDeployed(name: string): `0x${string}` {
   return DEAD_ADDRESS;
 }
 
-// The search_path must always target the `ponder` schema.
+// The schema of the indexed tables is decided by `ponder.schema.ts` (`onchainSchema`), not by this
+// connection string. The `search_path` below only keeps any unqualified query on the `ponder` schema.
 function getPonderConnectionString(): string {
   const base = requireEnv("DATABASE_URL");
   if (!base.includes("search_path=")) {

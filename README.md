@@ -24,9 +24,11 @@
 ---
 
 > [!IMPORTANT]
-> **Current Onchain Status (Stage 1 Deployed on Testnet):**  
-> Core identity, account abstraction, paymaster gas sponsorship, and surplus sweeper contracts are deployed and verified live on **Robinhood Chain Testnet (Chain ID `46630`, blocks `152785748` – `152785843`)**: `MachineRegistry`, `PinelyAccountFactory`, `PinelyPaymaster`, `SurplusSweeper`, and `MockUSDG`.  
-> Stage 2 contracts (the private Uniswap v4 pool, `PinelyHook`, `PinelyRouter`, `BurnVault`, `PinelyStake`, and `FleetSubscription`) are fully implemented and verified across 223 automated Foundry tests (including Robinhood live RPC fork tests), scheduled for mainnet deployment upon official token launch.  
+> **Current Onchain Status (Stage 1 deployed on Mainnet, guarded pre-Beta):**  
+> Core identity, account abstraction, paymaster gas sponsorship, and surplus sweeper contracts are deployed on **Robinhood Chain Mainnet (Chain ID `4663`, blocks `113448196` – `113448242`)**: `MachineRegistry`, `PinelyAccountFactory`, `PinelyPaymaster`, and `SurplusSweeper`, owned by a Safe multisig (2-of-3). The same Stage 1 set was rehearsed on **Robinhood Chain Testnet (Chain ID `46630`)** with a `MockUSDG`.  
+> The `$PINELY` token exists on mainnet at `0x415fA0f3480e7c1115EF052F9a7238827DC288cF`, but the protocol does not use it yet: burning and staking are not active.  
+> Stage 2 contracts (the private Uniswap v4 pool, `PinelyHook`, `PinelyRouter`, `BurnVault`, `PinelyStake`, and `FleetSubscription`) are implemented and covered by 231 automated Foundry tests (7 of them run the hook, router and pool seeder against the real Uniswap v4 PoolManager on a fork of Robinhood Chain mainnet), but stay off mainnet until an external audit is done.  
+> **Not done yet:** no external audit, no UserOperation has been processed on mainnet, and the Paymaster ETH/USD price is set manually by the Safe.  
 > The Next.js 15 App Router web application is live at `https://www.pinelyprotocol.tech`, with full TypeScript, Python, and ROS2 client SDKs active in the monorepo.
 
 ---
@@ -38,9 +40,9 @@
 - [3. Feature Matrix & Production Status](#3-feature-matrix--production-status)
 - [4. Live Contract Registry](#4-live-contract-registry)
   - [Robinhood Chain Testnet — Chain ID 46630 (Live)](#robinhood-chain-testnet--chain-id-46630-live)
-  - [Robinhood Chain Mainnet — Chain ID 4663 (Roadmap)](#robinhood-chain-mainnet--chain-id-4663-roadmap)
+  - [Robinhood Chain Mainnet — Chain ID 4663 (Stage 1 Deployed)](#robinhood-chain-mainnet--chain-id-4663-stage-1-deployed)
 - [5. Hardware Integration & Client SDKs](#5-hardware-integration--client-sdks)
-  - [TypeScript / CLI (@pinely/sdk)](#typescript--cli-pinelysdk)
+  - [TypeScript / CLI (@pinely-protocol/sdk)](#typescript--cli-pinely-protocolsdk)
   - [Python SDK (pinely_sdk)](#python-sdk-pinely_sdk)
   - [ROS2 Robotics Node (pinely_ros2)](#ros2-robotics-node-pinely_ros2)
 - [6. Monorepo Structure](#6-monorepo-structure)
@@ -81,7 +83,7 @@
   ├─ 1. Hardware Secure Element signs EIP-712 intent (Payment402Intent / SwapIntent)
   │
   ▼
-[ PINELY Client SDK (@pinely/sdk / Python / ROS2) ]
+[ PINELY Client SDK (@pinely-protocol/sdk / Python / ROS2) ]
   │
   ├─ 2. Constructs unsigned ERC-4337 UserOperation or encodes hookData
   │
@@ -130,12 +132,14 @@
 | **Realtime Indexer** | Ponder event streaming from block `152785748` | Testnet (46630) | ✅ **Configured** |
 | **Fleet Pro Cockpit** | Operator SIWE authentication, policy controls, telemetry | Web Portal | ✅ **Active** |
 | **Machine Passport** | Public verifiable machine identity and transaction history | Web Portal | ✅ **Active** |
-| **Client SDKs** | TypeScript (@pinely/sdk), Python (pinely_sdk), ROS2 node | Monorepo | ✅ **Active** |
+| **Client SDKs** | TypeScript (@pinely-protocol/sdk), Python (pinely_sdk), ROS2 node | Monorepo | 🟠 **Beta** (npm `0.1.0-beta.1`) |
 | **Private v4 Hook** | Machine Gate, Spend Policy, kill switch, dynamic fees | Stage 2 | 🧪 **Foundry Tested** |
 | **PinelyRouter** | Stateless caller verification and hookData forwarder | Stage 2 | 🧪 **Foundry Tested** |
 | **BurnVault** | Protocol fee buyback and burn emitting `Burned(uint256)` | Stage 2 | 🧪 **Foundry Tested** |
 | **PinelyStake** | Reputational staking vault for Gold Tier with 7-day cooldown | Stage 2 | 🧪 **Foundry Tested** |
-| **Safe Multisig** | 2-of-3 threshold multisig governance for Mainnet | Mainnet (4663) | 🛑 **Mainnet Gate** |
+| **Stage 1 Contracts** | Registry, account factory, Paymaster, sweeper | Mainnet (4663) | ✅ **Deployed** (unaudited) |
+| **Safe Multisig** | 2-of-3 threshold multisig owns the Registry and the Paymaster | Mainnet (4663) | ✅ **Live Onchain** |
+| **$PINELY Token** | ERC-20 on mainnet, not yet used by protocol contracts | Mainnet (4663) | ✅ **Exists** · burn and stake 🛑 Stage 2 |
 
 ---
 
@@ -164,14 +168,27 @@ Contract configurations and ABIs are synchronized automatically from Foundry bro
 
 ---
 
-### Robinhood Chain Mainnet — Chain ID 4663 (Roadmap)
+### Robinhood Chain Mainnet — Chain ID 4663 (Stage 1 Deployed)
 
 - **Network:** Robinhood Chain Mainnet
 - **Chain ID:** `4663`
 - **Gas Token:** ETH (18 decimals)
 - **Settlement Token:** Paxos USDG (`0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168`)
+- **Deployment Block Range:** `113448196` – `113448242` (indexer start block `113448196`)
 - **Block Explorer:** [https://robinhoodchain.blockscout.com](https://robinhoodchain.blockscout.com)
-- **Governance Requirement:** Safe Multisig 2-of-3 (`TREASURY_ADDRESS`). The deployer EOA is strictly rejected from retaining ownership on mainnet.
+- **Governance:** Safe Multisig 2-of-3 (`0x340B621D1BB4Be8b25D75fbBD9a628eD491030dD`) owns the Registry and the Paymaster. The deployer EOA is not an owner.
+- **Not confirmed:** explorer source verification of these contracts, an external audit, and any processed UserOperation.
+
+| Contract | Address | Transaction Hash | Block | Explorer Link |
+| :--- | :--- | :--- | :---: | :--- |
+| **MachineRegistry** | `0x75Eb65C532207617B7b0CdC34348De376B16920B` | `0xe966b1dd40629fb39eb855e5c207cdce77fab91301259a65787f86b87f821cb8` | 113448196 | [View on Explorer](https://robinhoodchain.blockscout.com/address/0x75Eb65C532207617B7b0CdC34348De376B16920B) |
+| **PinelyAccountFactory** | `0x1d312F5264202350F006789d18Ae3f21b2d00712` | `0xa91450678d5bf1d574fe490b6a8b5abf84877a17c906000dfca4fc89ddb0e4c7` | 113448204 | [View on Explorer](https://robinhoodchain.blockscout.com/address/0x1d312F5264202350F006789d18Ae3f21b2d00712) |
+| **PinelyPaymaster** | `0x70C63C0Fb54028F6F2b30c38d9f11f9696ACB1BC` | `0x9bafe8c2179a52fd4745e6c8da8ccd7233ce66630fa843ef94c9a6beedbc54dd` | 113448212 | [View on Explorer](https://robinhoodchain.blockscout.com/address/0x70C63C0Fb54028F6F2b30c38d9f11f9696ACB1BC) |
+| **SurplusSweeper** | `0x49a09d2558C4497913eAda66DB0e3ce1e7c0B579` | `0xd5e2ac0b690f5944440bd06257dcb5c948b8dd978a4a87a085bb41182533f607` | 113448220 | [View on Explorer](https://robinhoodchain.blockscout.com/address/0x49a09d2558C4497913eAda66DB0e3ce1e7c0B579) |
+| **$PINELY Token** | `0x415fA0f3480e7c1115EF052F9a7238827DC288cF` | External (launch transaction not recorded here) | n/a | [View on Explorer](https://robinhoodchain.blockscout.com/address/0x415fA0f3480e7c1115EF052F9a7238827DC288cF) |
+| **ERC-4337 EntryPoint v0.7** | `0x0000000071727De22E5E9d8BAf0edAc6f37da032` | Canonical singleton | Canonical | [View on Explorer](https://robinhoodchain.blockscout.com/address/0x0000000071727De22E5E9d8BAf0edAc6f37da032) |
+
+The `$PINELY` token was read from the chain on 2026-11-14: name `PINELY PROTOCOL`, symbol `PINELY`, 18 decimals, total supply 1,000,000,000. A bytecode scan found `transfer`, `approve`, `burn` and `burnFrom` and no owner, mint, pause, blacklist or proxy functions. That is not an audit.
 
 ---
 
@@ -179,14 +196,18 @@ Contract configurations and ABIs are synchronized automatically from Foundry bro
 
 PINELY offers first-class client libraries for embedded Linux, Python robotics runtimes, and ROS2:
 
-### TypeScript / CLI (@pinely/sdk)
+### TypeScript / CLI (@pinely-protocol/sdk)
 
 ```bash
-bun add @pinely/sdk
+bun add @pinely-protocol/sdk@beta
+# or: npm install @pinely-protocol/sdk@beta
 ```
 
+The SDK is a beta release (`0.1.0-beta.1`). Pin the `@beta` tag so you keep receiving pre-releases once a stable version exists. Run the CLI without installing:
+`npx @pinely-protocol/sdk@beta --help`.
+
 ```typescript
-import { Pinely } from "@pinely/sdk";
+import { Pinely } from "@pinely-protocol/sdk";
 
 // 1. Connect to Robinhood Chain
 const pinely = await Pinely.connect({
@@ -271,7 +292,7 @@ ros2 run pinely_ros2 pinely_node --ros-args \
 │   ├── src/services/   # HTTP 402 Facilitator, Keeper surplus monitor, ERC-4337 settlement rail
 │   └── src/db/         # PostgreSQL schema (app & ponder namespaces)
 ├── indexer/            # Ponder real-time event indexing for Robinhood Chain
-├── sdk/                # @pinely/sdk TypeScript hardware client library & CLI
+├── sdk/                # @pinely-protocol/sdk TypeScript hardware client library & CLI
 ├── sdk-python/         # pinely_sdk Python client library
 ├── ros2/               # pinely_ros2 ROS2 robotics package
 ├── shared/             # Single Source of Truth (SSOT) chains, contract addresses, and ABIs

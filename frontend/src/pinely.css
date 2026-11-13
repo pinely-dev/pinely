@@ -353,20 +353,75 @@ section,
   justify-content: center;
 }
 
+/*
+ * The one network line of the hero. No box, no leading dot: quiet type between two fading hairlines,
+ * the same device the section hairlines use. Crimson only in the hairlines, so the accent stays rare.
+ */
 .hero-eyebrow {
+  --eyebrow-accent: 224, 72, 107;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  background: rgba(109, 0, 26, 0.25);
-  border: 1px solid rgba(224, 72, 107, 0.35);
-  border-radius: 4px;
-  font-size: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 18px;
   font-family: var(--font-sans);
-  font-weight: 600;
-  letter-spacing: 0.15em;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: #ffffff;
+  color: var(--mut);
+  text-align: center;
+}
+
+.hero-eyebrow::before,
+.hero-eyebrow::after {
+  content: "";
+  width: clamp(28px, 7vw, 88px);
+  height: 1px;
+  flex-shrink: 0;
+}
+
+.hero-eyebrow::before {
+  background: linear-gradient(90deg, transparent, rgba(var(--eyebrow-accent), 0.6));
+}
+
+.hero-eyebrow::after {
+  background: linear-gradient(90deg, rgba(var(--eyebrow-accent), 0.6), transparent);
+}
+
+.hero-eyebrow-name {
+  color: var(--mut-light);
+}
+
+.hero-eyebrow-sep {
+  width: 1px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* A non-mainnet build is tinted amber end to end, so a testnet site is never read as production. */
+.hero-eyebrow-testnet {
+  --eyebrow-accent: 251, 191, 36;
+}
+
+.hero-eyebrow-testnet .hero-eyebrow-name {
+  color: #fbbf24;
+}
+
+@media (max-width: 560px) {
+  .hero-eyebrow {
+    letter-spacing: 0.18em;
+    gap: 6px 12px;
+  }
+
+  .hero-eyebrow::before,
+  .hero-eyebrow::after {
+    display: none;
+  }
+
+  .hero-eyebrow-sep {
+    display: none;
+  }
 }
 
 /* Stage Container uniting Monumental Backdrop & 3D Robot Canvas */
@@ -7667,4 +7722,114 @@ input[type="number"]::-webkit-outer-spin-button {
   .page-bg-word {
     font-size: clamp(120px, 34vw, 420px);
   }
+}
+
+/*
+ * $PINELY contract address. A quiet hairline capsule: symbol, address, two text actions. Until the
+ * token launches it reads "CA: TBA" in muted type with a short scam warning, and has no actions.
+ */
+.token-ca {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 0 4px 0 16px;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: rgba(255, 255, 255, 0.025);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--mut);
+}
+
+.token-ca-hero {
+  justify-content: center;
+}
+
+.token-ca-footer {
+  margin-top: 12px;
+}
+
+.token-ca-symbol {
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--mut-light);
+}
+
+.token-ca-sep {
+  width: 1px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.token-ca-value {
+  color: #ffffff;
+  letter-spacing: 0.02em;
+}
+
+.token-ca-label {
+  margin-right: 4px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--mut);
+}
+
+.token-ca-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-left: 1px solid var(--line);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mut-light);
+  transition: color 0.2s ease;
+}
+
+.token-ca-action:hover,
+.token-ca-action:focus-visible {
+  color: var(--bl);
+}
+
+.token-ca-tba {
+  padding-right: 16px;
+}
+
+.token-ca-tba .token-ca-value {
+  color: var(--mut-light);
+}
+
+.token-ca-note {
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--mut);
+}
+
+@media (max-width: 560px) {
+  .token-ca {
+    padding-left: 14px;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .token-ca-sep {
+    display: none;
+  }
+}
+
+/* The address itself copies on click. Same look as the static value, with a hover cue. */
+.token-ca-copy {
+  min-height: 44px;
+  padding: 0 4px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.token-ca-copy:hover,
+.token-ca-copy:focus-visible {
+  color: var(--bl);
 }

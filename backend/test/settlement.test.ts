@@ -9,7 +9,7 @@ import {
   PAYMENT_402_TYPES,
   verifyPreparedSettlement,
   type PreparedSettlement,
-} from "@pinely/sdk";
+} from "@pinely-protocol/sdk";
 import { pinelyAccountAbi } from "@pinely/shared/contracts";
 import app from "../src/app";
 import { verifyAccessToken } from "../src/lib/access-token";
@@ -232,7 +232,7 @@ describe("Settlement: prepare -> machine signs -> settle, against a mock chain a
     try {
       setEnv(baseEnv(chain.url));
       const { prepared } = await prepare(await signedRequest());
-      const { deserializeUserOperation } = await import("@pinely/sdk");
+      const { deserializeUserOperation } = await import("@pinely-protocol/sdk");
       expect(prepared!.userOpHash).toBe(
         getUserOpHash(deserializeUserOperation(prepared!.userOp), ENTRY_POINT, 46630),
       );

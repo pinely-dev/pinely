@@ -8,7 +8,7 @@ import {
   Pinely,
   serializeUserOperation,
   type PreparedSettlement,
-} from "@pinely/sdk";
+} from "@pinely-protocol/sdk";
 import { pinelyAccountAbi } from "@pinely/shared/contracts";
 import app from "../src/app";
 import { verifyAccessToken } from "../src/lib/access-token";

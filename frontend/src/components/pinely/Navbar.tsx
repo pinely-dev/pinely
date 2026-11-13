@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { WalletButton } from "./WalletButton";
 import { X_URL } from "@/lib/site";
 
 function XIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -124,86 +124,7 @@ export function Navbar() {
           </a>
 
           <div className="hidden lg:block">
-            <ConnectButton.Custom>
-              {({
-                account,
-                chain,
-                openAccountModal,
-                openChainModal,
-                openConnectModal,
-                mounted,
-              }) => {
-                const ready = mounted;
-                const connected = ready && account && chain;
-
-                return (
-                  <div
-                    {...(!ready && {
-                      "aria-hidden": true,
-                      style: {
-                        opacity: 0,
-                        pointerEvents: "none",
-                        userSelect: "none",
-                      },
-                    })}
-                  >
-                    {(() => {
-                      if (!connected) {
-                        return (
-                          <button
-                            onClick={openConnectModal}
-                            type="button"
-                            className="btn dark"
-                            style={{
-                              padding: "10px 18px",
-                              fontSize: "13px",
-                              minHeight: "44px",
-                            }}
-                          >
-                            Connect Wallet
-                          </button>
-                        );
-                      }
-
-                      if (chain.unsupported) {
-                        return (
-                          <button
-                            onClick={openChainModal}
-                            type="button"
-                            className="btn red font-mono"
-                            style={{
-                              padding: "10px 18px",
-                              fontSize: "12px",
-                              fontWeight: 700,
-                              letterSpacing: "0.04em",
-                              minHeight: "44px",
-                            }}
-                          >
-                            WRONG NETWORK
-                          </button>
-                        );
-                      }
-
-                      return (
-                        <button
-                          onClick={openAccountModal}
-                          type="button"
-                          className="btn dark font-mono"
-                          style={{
-                            padding: "10px 18px",
-                            fontSize: "13px",
-                            fontWeight: 600,
-                            minHeight: "44px",
-                          }}
-                        >
-                          {account.displayName}
-                        </button>
-                      );
-                    })()}
-                  </div>
-                );
-              }}
-            </ConnectButton.Custom>
+            <WalletButton />
           </div>
 
           <Link href="/pilot" className="btn red cta">
@@ -316,7 +237,7 @@ export function Navbar() {
                 <XIcon width={16} height={16} />
               </a>
               <div style={{ display: "flex", justifyContent: "center" }}>
-                <ConnectButton chainStatus="none" showBalance={false} />
+                <WalletButton fullWidth />
               </div>
             </div>
           </div>

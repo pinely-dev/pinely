@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { privateKeyToAccount } from "viem/accounts";
-import { DevKeyStore, getPinelyFacilitatorDomain, PAYMENT_402_TYPES } from "@pinely/sdk";
+import { DevKeyStore, getPinelyFacilitatorDomain, PAYMENT_402_TYPES } from "@pinely-protocol/sdk";
 import app from "../src/app";
 import { pool } from "../src/db/connection";
 import { computeEffectiveTier } from "../src/routes/machines";

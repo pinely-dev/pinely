@@ -1,3 +1,4 @@
+import { getAddress } from "viem";
 import type { Address } from "../types";
 import { addresses } from "./addresses";
 import { externalAddresses } from "./external";
@@ -46,6 +47,33 @@ export function findContractAddress(
     if (isAddress(mock)) return mock;
   }
   return undefined;
+}
+
+/** Contract address (CA) of the $PINELY token on a chain: not launched yet, or the official address. */
+export type PinelyTokenCa = { status: "tba" } | { status: "live"; address: Address };
+
+/**
+ * Resolves the official $PINELY token CA for a chain from `external.ts` (key `PINELY`).
+ *
+ * An unset key is "TBA", never a guess. A set key must be a non-zero address in exact EIP-55
+ * checksum form; anything else throws, so a mistyped or lowercased address fails the build instead
+ * of being shown to users as the official token.
+ */
+export function resolvePinelyTokenCa(
+  chainId: number | undefined,
+  source: Record<string, Record<string, string> | undefined> = externalAddresses,
+): PinelyTokenCa {
+  if (chainId === undefined) return { status: "tba" };
+  const raw = source[String(chainId)]?.PINELY;
+  if (raw === undefined || raw === "") return { status: "tba" };
+
+  if (!isAddress(raw) || /^0x0{40}$/.test(raw) || getAddress(raw) !== raw) {
+    throw new Error(
+      `[PINELY] shared/contracts/external.ts: PINELY on chain ${chainId} must be a non-zero address ` +
+        `in exact EIP-55 checksum form (got "${raw}").`,
+    );
+  }
+  return { status: "live", address: raw };
 }
 
 /**

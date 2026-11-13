@@ -87,7 +87,6 @@ export function ProtocolFirewall() {
       {/* Top Banner / Telemetry Status */}
       <div className="firewall-top">
         <div className="fw-badge">
-          <span className="pulse-beacon green" />
           <span>PINELY ONCHAIN FIREWALL · 4 ACTIVE GUARDS</span>
         </div>
         <div className="fw-target font-mono">
@@ -115,9 +114,7 @@ export function ProtocolFirewall() {
               >
                 <div className="fw-gate-head">
                   <span className="text-xs tracking-wider text-zinc-400">{gate.gateNumber}</span>
-                  <span className="fw-status-pill">
-                    <span className="pulse-beacon green" /> PASS
-                  </span>
+                  <span className="fw-status-pill">PASS</span>
                 </div>
                 <h3 className="fw-gate-title">{gate.title}</h3>
                 <p className="fw-gate-sub">{gate.subtitle}</p>

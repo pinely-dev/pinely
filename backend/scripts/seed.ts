@@ -4,6 +4,11 @@ import { pool, ensureSchemas } from "../src/db/connection";
 const APP_SCHEMA = process.env.DATABASE_SCHEMA ?? "app";
 const PONDER_SCHEMA = process.env.PONDER_SCHEMA ?? "ponder";
 
+/**
+ * Development only: fills a LOCAL database with sample rows when no indexer is running.
+ * It creates the `ponder.*` tables itself, so never run it on a database where the indexer runs
+ * (Ponder creates those tables and fails when they already exist with another column set).
+ */
 async function seed() {
   if (process.env.NODE_ENV === "production") {
     console.error("Refusing to seed sample data in production.");
