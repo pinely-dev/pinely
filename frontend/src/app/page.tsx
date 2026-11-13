@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Navbar } from "@/components/pinely/Navbar";
 import { Footer } from "@/components/pinely/Footer";
-import { activeChain, stablecoinSymbol, blockTimeLabel } from "@/lib/chain";
+import { isPublicChainId } from "@pinely/shared/chains";
+import { activeChain, chainProfile, stablecoinSymbol } from "@/lib/chain";
 import { Marquee } from "@/components/pinely/Marquee";
 import { RobotHeroStage } from "@/components/pinely/hero/RobotHeroStage";
 import { HeroSpatialBackdrop } from "@/components/pinely/hero/HeroSpatialBackdrop";
@@ -13,7 +14,10 @@ import { FieldScenarios } from "@/components/pinely/FieldScenarios";
 import { FleetSavingsCalculator } from "@/components/pinely/FleetSavingsCalculator";
 import { MissionTrajectory } from "@/components/pinely/MissionTrajectory";
 import { DataBusConduit } from "@/components/pinely/DataBusConduit";
-import { TextScramble } from "@/components/pinely/TextScramble";
+import { TokenCa } from "@/components/pinely/TokenCa";
+
+/** A non-mainnet build says so in the hero, so nobody mistakes it for production. */
+const isTestnet = !isPublicChainId(activeChain.id);
 
 export default function HomePage() {
   return (
@@ -23,37 +27,15 @@ export default function HomePage() {
 
       <Navbar />
       <main id="main-content">
-        {/* Telemetry Status Bar */}
-        <div className="status" role="status">
-          <span className="item">
-            <span className="pulse-beacon green" />
-            <span>
-              <b>{activeChain.name}</b> · Chain {activeChain.id}
-            </span>
-          </span>
-          <span className="item text-zinc-300">
-            <span>Block time {blockTimeLabel}</span>
-            <span style={{ opacity: 0.4 }}>|</span>
-            <span>Stage 1 Core</span>
-          </span>
-          <span className="item">
-            <span style={{ color: "var(--bl)" }}>⚡ Gas Sponsored</span>
-            <span style={{ opacity: 0.4 }}>·</span>
-            <span>{stablecoinSymbol} Settlement</span>
-          </span>
-        </div>
-
         {/* Hero Section: Option A Cinematic Spatial Layering */}
         <section className="hero hero-spatial" id="home" data-spy>
-          {/* Layer 3 Top: Technical Status Eyebrow */}
+          {/* Layer 3 Top: the one network line of the page. Chain id, block time and contract
+              addresses live in the footer and the docs, not above the fold. */}
           <div className="hero-eyebrow-wrap">
-            <span className="hero-eyebrow">
-              <span className="pulse-beacon green" />
-              <TextScramble
-                text={`${activeChain.name.toUpperCase()} · ${blockTimeLabel.toUpperCase()} BLOCKS`}
-                scrambleSpeed={20}
-                revealSpeed={35}
-              />
+            <span className={`hero-eyebrow${isTestnet ? " hero-eyebrow-testnet" : ""}`}>
+              <span className="hero-eyebrow-name">{chainProfile.shortName}</span>{" "}
+              <span className="hero-eyebrow-sep" aria-hidden="true" />{" "}
+              <span>{stablecoinSymbol} settlement</span>
             </span>
           </div>
 
@@ -82,9 +64,7 @@ export default function HomePage() {
               </a>
             </div>
 
-            <div className="hero-telemetry-note">
-              Session keys, kill switch, sponsored gas. Settled in {stablecoinSymbol}.
-            </div>
+            <TokenCa variant="hero" />
           </div>
         </section>
 

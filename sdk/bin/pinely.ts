@@ -1,9 +1,13 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 import { type Address, type Hash, type Hex } from "viem";
 import { generatePrivateKey } from "viem/accounts";
 import { Pinely } from "../src/index.js";
 import { robinhoodMainnet, robinhoodTestnet } from "@pinely/shared/chains";
 import { findContractAddress } from "@pinely/shared/contracts";
+
+// Injected at build time by tsup (see tsup.config.ts); falls back to "dev" when run from source.
+declare const __SDK_VERSION__: string | undefined;
+const SDK_VERSION = typeof __SDK_VERSION__ === "string" ? __SDK_VERSION__ : "dev";
 
 const USAGE = `
 PINELY CLI: hardware and autonomous machine financial operations on Robinhood Chain
@@ -20,7 +24,7 @@ Commands:
 
 Options:
   -h, --help        Show this help guide
-  -v, --version     Show @pinely/sdk version
+  -v, --version     Show @pinely-protocol/sdk version
 
 Examples:
   pinely machine create --name "Drone-Alpha" --operator 0x1234...
@@ -65,6 +69,10 @@ function parseArgs(args: string[]): {
 
 async function main() {
   const argv = process.argv.slice(2);
+  if (argv.includes("-v") || argv.includes("--version")) {
+    console.log(SDK_VERSION);
+    process.exit(0);
+  }
   if (argv.length === 0 || argv.includes("-h") || argv.includes("--help")) {
     console.log(USAGE);
     process.exit(0);
@@ -305,7 +313,8 @@ async function main() {
         2,
       ),
     );
-    process.exit(0);
+    // A failed payment must be visible to scripts: exit non-zero unless the Facilitator confirmed settlement.
+    process.exit(result.status === "settled" ? 0 : 1);
   }
 
   if (command === "sweep") {
@@ -349,7 +358,13 @@ async function main() {
   process.exit(1);
 }
 
-main().catch((err) => {
-  console.error("[FATAL ERROR]", err);
+main().catch((err: unknown) => {
+  // Concise by default; set PINELY_DEBUG=1 for the full stack trace.
+  if (process.env.PINELY_DEBUG) {
+    console.error("[PINELY] Fatal error:", err);
+  } else {
+    console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    console.error("Set PINELY_DEBUG=1 for a stack trace.");
+  }
   process.exit(1);
 });

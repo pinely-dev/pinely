@@ -73,7 +73,6 @@ export function TacticalCommandCockpit() {
 
           <div className="switcher-telemetry">
             <span className="telemetry-item">
-              <span className="pulse-beacon green" />
               <TextScramble
                 text={`Target: Robinhood Chain ${activeChain.id}`}
                 scrambleSpeed={25}
@@ -148,7 +147,7 @@ export function TacticalCommandCockpit() {
                       className="btn dark sm"
                       style={{ width: "100%", justifyContent: "center" }}
                     >
-                      Inspect PNLY-0001 Passport →
+                      Open passport lookup →
                     </Link>
                   </div>
                 </aside>

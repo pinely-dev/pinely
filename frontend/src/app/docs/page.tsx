@@ -51,6 +51,12 @@ const PROTOCOL_CONTRACTS: ProtocolContractEntry[] = [
     stage: "Official",
   },
   {
+    name: "$PINELY token",
+    lookupKey: "PINELY",
+    desc: "Official PINELY ERC-20 on Robinhood Chain mainnet (18 decimals). Not used by the protocol contracts yet",
+    stage: "Official",
+  },
+  {
     name: "ERC-4337 EntryPoint v0.7",
     lookupKey: "EntryPoint",
     desc: "Canonical ERC-4337 v0.7 EntryPoint singleton",
@@ -118,10 +124,10 @@ export default function DocsPage() {
 
   const codeSnippets = {
     ts: `// 1. Install the SDK
-bun add @pinely/sdk
+bun add @pinely-protocol/sdk@beta
 
 // 2. Connect. The development key store is for testing only: never use it in production.
-import { Pinely } from "@pinely/sdk";
+import { Pinely } from "@pinely-protocol/sdk";
 
 const pinely = await Pinely.connect({
   chain: "robinhoodTestnet", // chain 46630
@@ -231,7 +237,7 @@ ros2 service call /pinely/pay_service pinely_ros2/srv/PayService \\
           <div className="docs-code-header">
             <div className="docs-tab-bar" style={{ position: "relative" }}>
               {[
-                { id: "ts", label: "TypeScript / CLI (@pinely/sdk)" },
+                { id: "ts", label: "TypeScript / CLI (@pinely-protocol/sdk)" },
                 { id: "py", label: "Python (pinely_sdk)" },
                 { id: "ros2", label: "ROS2 Node (pinely_ros2)" },
               ].map((tab) => (

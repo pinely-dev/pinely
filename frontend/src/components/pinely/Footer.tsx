@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { activeChain, stablecoinSymbol, chainProfile, blockTimeLabel } from "@/lib/chain";
 import { X_URL } from "@/lib/site";
+import { TokenCa } from "@/components/pinely/TokenCa";
 import { robinhoodTestnet, robinhoodMainnet } from "@pinely/shared/chains";
 
 export function Footer() {
@@ -40,10 +41,12 @@ export function Footer() {
             color: "var(--mut-light)",
           }}
         >
-          <span className="pulse-beacon green" style={{ width: 6, height: 6 }} />
           <span>
             {chainProfile.shortName} · {blockTimeLabel}
           </span>
+        </div>
+        <div>
+          <TokenCa variant="footer" />
         </div>
       </div>
 

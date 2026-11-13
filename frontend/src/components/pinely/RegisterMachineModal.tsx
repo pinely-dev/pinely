@@ -64,7 +64,7 @@ export function RegisterMachineModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose, tx.busy]);
 
-  const cliCommand = `bunx @pinely/sdk machine register --operator ${operator || "0xYourOperatorAddress"}`;
+  const cliCommand = `npx @pinely-protocol/sdk@beta machine create --operator ${operator || "0xYourOperatorAddress"}`;
 
   const copyCliCommand = async () => {
     try {

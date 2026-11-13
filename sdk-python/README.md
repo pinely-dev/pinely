@@ -1,7 +1,7 @@
 # PINELY Python SDK
 
 Python package for autonomous machine finance on Robinhood Chain (testnet `46630`, mainnet `4663`). It mirrors the
-TypeScript SDK (`@pinely/sdk`):
+TypeScript SDK (`@pinely-protocol/sdk`):
 
 - Machine key store abstraction (`DevKeyStore`, `KeyStore`).
 - EIP-712 signing for revenue swaps (`SwapIntent`) and HTTP 402 payments (`Payment402Intent`).

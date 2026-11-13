@@ -23,7 +23,7 @@ import {
   serializeUserOperation,
   type PackedUserOperation,
   type SerializedUserOperation,
-} from "@pinely/sdk";
+} from "@pinely-protocol/sdk";
 import { APP_SCHEMA, pool } from "../db/connection";
 import { issueAccessToken } from "../lib/access-token";
 import { getBackendChainId, resolveAddress } from "../lib/config";

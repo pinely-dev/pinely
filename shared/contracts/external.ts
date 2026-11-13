@@ -38,6 +38,18 @@ export const externalAddresses: Record<string, Record<string, Address>> = {
     SafeSingletonL2: "0x3E5c63644E683549055b9Be8653de26E0B4CD36E",
     SafeFallbackHandler: "0xf48f2B2d2a534e402487b3ee7C18c33Aec0Fe5e4",
     SafeMultiSend: "0xA238CBeb142c10Ef7Ad8442C6D1f9E89e07e7761",
-    // Not yet available: PoolManager (source undecided), PINELY (token not launched).
+    // Uniswap v4 PoolManager (Robinhood Chain). Found on 2026-11-14 on the Uniswap v4 deployments page, the
+    // Uniswap governance forum and third-party indexers; bytecode read from the chain (24,009 bytes, PoolManager
+    // functions present, owner 0x2BAD8182C09F50c8318d769245beA52C32Be46CD). The owner compared the address with the
+    // official Uniswap page on 2026-11-14. Used by the Stage 2 deployment only; see docs/plans/09, section 12.26.
+    PoolManager: "0x8366a39CC670B4001A1121B8F6A443A643e40951",
+    //
+    // PINELY ($PINELY token CA), shown in the hero, footer and marquee. Read from chain on 2026-11-14:
+    // name "PINELY PROTOCOL", symbol PINELY, 18 decimals, total supply 1,000,000,000; bytecode present.
+    // Provenance of the address (launch transaction) is the owner's to confirm. If the key is absent,
+    // every page shows "CA: TBA". To change it, take the address from the launch transaction (never
+    // from a chat message), in exact EIP-55 checksum form, then commit and redeploy:
+    PINELY: "0x415fA0f3480e7c1115EF052F9a7238827DC288cF",
+    // `resolvePinelyTokenCa` rejects a zero or wrongly cased address at build time.
   },
 };

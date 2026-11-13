@@ -4,6 +4,10 @@ node_modules/
 output/
 dist/
 
+# SDK publish staging directory and packed tarballs
+sdk/.publish/
+*.tgz
+
 # Frontend build output
 .next/
 frontend/.next/

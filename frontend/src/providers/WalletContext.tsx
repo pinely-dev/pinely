@@ -314,11 +314,9 @@ export function WalletProvider({
       return;
     }
     if (isWrongNetwork) {
-      if (openChainModal) {
-        openChainModal();
-      } else {
-        await switchToTargetChain();
-      }
+      // Ask the wallet to switch straight to the target network. RainbowKit's chain modal is disabled
+      // until the SIWE session exists and would also offer the other Robinhood network.
+      await switchToTargetChain();
       return;
     }
     if (!isAuthenticated) {
@@ -336,7 +334,6 @@ export function WalletProvider({
     isWrongNetwork,
     isAuthenticated,
     openConnectModal,
-    openChainModal,
     openAccountModal,
     connectWallet,
     switchToTargetChain,

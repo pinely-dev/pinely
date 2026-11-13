@@ -16,6 +16,7 @@ import { machineRegistryAbi, surplusSweeperAbi } from "@pinely/shared/contracts"
 import {
   computeAttestationHash,
   computeMachineId,
+  createKeyStore,
   DevKeyStore,
   Pinely,
   getPinelyDomain,
@@ -65,8 +66,14 @@ describe("PINELY SDK: unit and integration test suite", () => {
 
     it("should initialize TpmKeyStore and sign without exporting private key", async () => {
       const { TpmKeyStore } = await import("../src/keystore/tpm-keystore.js");
-      const tpm = new TpmKeyStore({ type: "tpm", pcrList: [0, 1, 2, 7] });
+      const tpm = new TpmKeyStore({
+        type: "tpm",
+        pcrList: [0, 1, 2, 7],
+        simulatedEnclave: true,
+        deviceUniqueSalt: "unit-test-salt",
+      });
       expect(tpm.type).toBe("tpm");
+      expect(tpm.simulated).toBe(true);
 
       const address = await tpm.getAddress();
       expect(address).toBeDefined();
@@ -84,6 +91,36 @@ describe("PINELY SDK: unit and integration test suite", () => {
       expect(attestation.quote.startsWith("0x")).toBe(true);
       expect(attestation.firmwareHash.startsWith("0x")).toBe(true);
       expect(attestation.timestamp).toBeGreaterThan(0);
+    });
+
+    it("fails closed by default: no simulated key unless simulatedEnclave is explicitly true (NODE_ENV unset)", async () => {
+      const { TpmKeyStore, HardwareSecurityModuleRequiredError } =
+        await import("../src/keystore/tpm-keystore.js");
+      const prevEnv = process.env.NODE_ENV;
+      delete process.env.NODE_ENV;
+      try {
+        for (const type of ["tpm", "secure-element"] as const) {
+          expect(() => new TpmKeyStore({ type })).toThrow(HardwareSecurityModuleRequiredError);
+          expect(() => createKeyStore({ type })).toThrow(HardwareSecurityModuleRequiredError);
+        }
+      } finally {
+        if (prevEnv !== undefined) process.env.NODE_ENV = prevEnv;
+      }
+    });
+
+    it("a simulated key depends on the supplied device salt (different salt, different key)", async () => {
+      const { TpmKeyStore } = await import("../src/keystore/tpm-keystore.js");
+      const a = await new TpmKeyStore({
+        type: "tpm",
+        simulatedEnclave: true,
+        deviceUniqueSalt: "salt-a",
+      }).getAddress();
+      const b = await new TpmKeyStore({
+        type: "tpm",
+        simulatedEnclave: true,
+        deviceUniqueSalt: "salt-b",
+      }).getAddress();
+      expect(a).not.toBe(b);
     });
 
     it("should throw HardwareSecurityModuleRequiredError in production mode without hardware TPM", async () => {

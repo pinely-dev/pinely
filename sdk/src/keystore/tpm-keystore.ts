@@ -21,6 +21,10 @@ export class HardwareSecurityModuleRequiredError extends Error {
  * The private key is isolated inside the cryptographic hardware engine and is never exported.
  * Uses the secp256k1 curve, fully compatible with the on-chain EVM ecrecover instruction.
  * Signing is done through hardware cryptographic engine commands (TPM2_Sign / PKCS#11).
+ *
+ * Fail-closed by default: without a reachable hardware device the constructor throws
+ * `HardwareSecurityModuleRequiredError`. A simulated enclave exists for tests only and must be requested
+ * with `simulatedEnclave: true`; it is rejected when `NODE_ENV=production`.
  */
 export class TpmKeyStore implements IKeyStore {
   readonly type: string;
@@ -47,10 +51,9 @@ export class TpmKeyStore implements IKeyStore {
       );
     }
 
-    this.simulated =
-      "simulatedEnclave" in config && config.simulatedEnclave !== undefined
-        ? config.simulatedEnclave
-        : !isProduction;
+    // Fail closed: simulation is OPT-IN. The simulated key is derived from public strings, so anyone can
+    // recompute it. It must never be the silent default, whatever NODE_ENV happens to be set to.
+    this.simulated = "simulatedEnclave" in config && config.simulatedEnclave === true;
 
     // If simulation is off (for example in production mode, or explicitly disabled):
     if (!this.simulated) {
@@ -85,12 +88,19 @@ export class TpmKeyStore implements IKeyStore {
       );
       this.enclaveAccount = privateKeyToAccount(internalEnclaveSeed);
     } else {
-      // Local simulation mode for testing (non-production)
-      const uniqueSalt =
+      // Local simulation mode for tests (non-production, explicitly requested via simulatedEnclave: true)
+      const configuredSalt =
         ("deviceUniqueSalt" in config && config.deviceUniqueSalt) ||
         (typeof process !== "undefined" &&
           (process.env.DEVICE_HARDWARE_ENTROPY || process.env.MACHINE_DEVICE_SALT)) ||
-        "DEV_SIMULATION_DEFAULT_SALT";
+        undefined;
+      if (!configuredSalt && typeof process !== "undefined" && process.emitWarning) {
+        process.emitWarning(
+          "TpmKeyStore is simulated with the public default salt: its private key is derivable by anyone. Use it for tests only.",
+          "PinelySimulatedKeyWarning",
+        );
+      }
+      const uniqueSalt = configuredSalt || "DEV_SIMULATION_DEFAULT_SALT";
 
       const internalEnclaveSeed = keccak256(
         toHex(`PINELY_TPM2_HARDWARE_SEALED_${this.devicePath}_${this.type}_${uniqueSalt}`),

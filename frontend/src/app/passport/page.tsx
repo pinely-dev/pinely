@@ -3,7 +3,9 @@
 import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { isPublicChainId } from "@pinely/shared/chains";
 import { activeChain, stablecoinSymbol } from "@/lib/chain";
+import { DataState } from "@/components/pinely/DataState";
 import { Navbar } from "@/components/pinely/Navbar";
 import { PageBackground } from "@/components/pinely/PageBackground";
 import { Footer } from "@/components/pinely/Footer";
@@ -210,7 +212,14 @@ function CopyButton({ text, label = "Copy" }: { text: string; label?: string }) 
   );
 }
 
-// --- Seeded Sample Fleet Reference Nodes ---
+// --- Seeded Sample Fleet Reference Nodes (testnet and local development only) ---
+
+/**
+ * The sample machines below are invented records. They exist only so a testnet or local build has
+ * something to look at, and they are never shown, searched, or used as a fallback on a public
+ * (mainnet) chain: `isPublicChainId` is true there, so every sample code path is switched off.
+ */
+const SHOW_SAMPLES = !isPublicChainId(activeChain.id);
 
 interface SampleMachine {
   id: string;
@@ -333,16 +342,17 @@ function PassportView() {
   // Query live indexer/backend if valid
   const passportQuery = useMachinePassport(valid ? rawId : undefined);
 
-  // Match sample machine if applicable
+  // Match a sample machine (testnet and local development only, never on a public chain)
   const sampleMatch = useMemo(() => {
+    if (!SHOW_SAMPLES) return undefined;
     return SAMPLE_MACHINES.find((s) => s.id.toLowerCase() === rawId.toLowerCase());
   }, [rawId]);
 
   // Determine active displayed passport
   // 1. Live backend data (if available)
-  // 2. Sample machine match fallback (if query fails or is pending)
-  // 3. Default specimen (PNLY-ROV-001) if no ID is specified
-  const isSpecimenShowcase = !rawId;
+  // 2. Sample machine match fallback (sample builds only)
+  // 3. Default specimen (PNLY-ROV-001) if no ID is specified (sample builds only)
+  const isSpecimenShowcase = SHOW_SAMPLES && !rawId;
   const activeRecord: MachinePassport | null = useMemo(() => {
     if (passportQuery.data) return passportQuery.data;
     if (sampleMatch) return sampleMatch.data;
@@ -350,11 +360,13 @@ function PassportView() {
     return null;
   }, [passportQuery.data, sampleMatch, isSpecimenShowcase]);
 
+  // Only a record that did not come from the indexer counts as a sample.
   const activeSampleInfo = useMemo(() => {
+    if (passportQuery.data) return null;
     if (sampleMatch) return sampleMatch;
     if (isSpecimenShowcase) return SAMPLE_MACHINES[0];
     return null;
-  }, [sampleMatch, isSpecimenShowcase]);
+  }, [passportQuery.data, sampleMatch, isSpecimenShowcase]);
 
   const tier = activeRecord ? tierOf(activeRecord.tier) : null;
   const registeredTx = activeRecord?.registeredTx
@@ -423,34 +435,36 @@ function PassportView() {
           </button>
         </form>
 
-        {/* Quick Sample Fleet Chips (Custom Vector Icons, No Medals) */}
-        <div className="passport-sample-chips-row">
-          <span className="passport-sample-label">Sample Fleet Nodes:</span>
-          {SAMPLE_MACHINES.map((sample) => {
-            const isSelected =
-              rawId.toLowerCase() === sample.id.toLowerCase() ||
-              (isSpecimenShowcase && sample.alias === "PNLY-ROV-001");
+        {/* Quick Sample Fleet Chips: invented records, rendered on non-mainnet builds only */}
+        {SHOW_SAMPLES && (
+          <div className="passport-sample-chips-row">
+            <span className="passport-sample-label">Sample Fleet Nodes (sample data):</span>
+            {SAMPLE_MACHINES.map((sample) => {
+              const isSelected =
+                rawId.toLowerCase() === sample.id.toLowerCase() ||
+                (isSpecimenShowcase && sample.alias === "PNLY-ROV-001");
 
-            return (
-              <button
-                key={sample.id}
-                type="button"
-                onClick={() => selectSample(sample)}
-                className={`passport-chip-btn ${isSelected ? "active" : ""}`}
-                title={`Inspect ${sample.alias} (${sample.category})`}
-              >
-                <span className="passport-chip-icon">
-                  {sample.icon === "rover" && <RoverIcon width={16} height={16} />}
-                  {sample.icon === "drone" && <DroneIcon width={16} height={16} />}
-                  {sample.icon === "ev" && <EvStationIcon width={16} height={16} />}
-                </span>
-                <span>
-                  <b>{sample.alias}</b> [{sample.tierName}]
-                </span>
-              </button>
-            );
-          })}
-        </div>
+              return (
+                <button
+                  key={sample.id}
+                  type="button"
+                  onClick={() => selectSample(sample)}
+                  className={`passport-chip-btn ${isSelected ? "active" : ""}`}
+                  title={`Inspect ${sample.alias} (${sample.category}), sample data`}
+                >
+                  <span className="passport-chip-icon">
+                    {sample.icon === "rover" && <RoverIcon width={16} height={16} />}
+                    {sample.icon === "drone" && <DroneIcon width={16} height={16} />}
+                    {sample.icon === "ev" && <EvStationIcon width={16} height={16} />}
+                  </span>
+                  <span>
+                    <b>{sample.alias}</b> [{sample.tierName}]
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Invalid ID Format Alert */}
@@ -465,17 +479,39 @@ function PassportView() {
         </div>
       )}
 
-      {/* Specimen Showcase Notification Banner */}
+      {/* Specimen Showcase Notification Banner (sample builds only) */}
       {isSpecimenShowcase && (
         <div className="passport-specimen-banner">
           <span className="passport-specimen-badge">
             <RoverIcon width={18} height={18} />
-            SPECIMEN ATTESTATION PAPERS · FLAGSHIP REFERENCE NODE
+            SAMPLE DATA · NOT A REAL MACHINE
           </span>
           <span>
-            Displaying reference record for <b>PNLY-ROV-001</b>. Select another sample chip or enter
-            any 64-hex Machine ID above to look up live papers.
+            Displaying an invented reference record for <b>PNLY-ROV-001</b>. Select another sample
+            chip or enter any 64-hex Machine ID above to look up live papers.
           </span>
+        </div>
+      )}
+
+      {/* Public chain: no machine selected yet. Nothing is invented to fill the page. */}
+      {!SHOW_SAMPLES && !rawId && (
+        <div className="note" role="status" style={{ marginBottom: "24px" }}>
+          Enter a Machine ID (0x followed by 64 hex characters) to look up its onchain passport.
+        </div>
+      )}
+
+      {/* Lookup of a real machine that has no record to show: loading, error, or not found. */}
+      {valid && !activeRecord && (
+        <div style={{ marginBottom: "24px" }}>
+          <DataState
+            isLoading={passportQuery.isLoading}
+            error={passportQuery.error}
+            onRetry={() => void passportQuery.refetch()}
+          >
+            <div className="note" role="status">
+              No passport was returned for this Machine ID.
+            </div>
+          </DataState>
         </div>
       )}
 
@@ -500,6 +536,11 @@ function PassportView() {
             </div>
 
             <div className="passport-header-badges">
+              {activeSampleInfo && (
+                <span className="passport-status-badge frozen">
+                  SAMPLE DATA · NOT A REAL MACHINE
+                </span>
+              )}
               <span
                 className={`passport-status-badge ${activeRecord.status === "ACTIVE" ? "active" : "frozen"}`}
               >
@@ -517,12 +558,20 @@ function PassportView() {
               <span>HARDWARE ENCLAVE:</span>
               <b>
                 {activeSampleInfo?.chipModel ??
-                  "NXP SE050 · EAL6+ Certified Hardware Security Module"}
+                  (activeRecord.hardwareAttestation.hash
+                    ? "Attestation hash recorded onchain"
+                    : "No attestation submitted")}
               </b>
             </div>
             <div className="passport-enclave-item">
               <span>ROOT ATTESTATION:</span>
-              <b>TAMPER-PROOF NON-EXPORTABLE</b>
+              <b>
+                {activeSampleInfo
+                  ? "TAMPER-PROOF NON-EXPORTABLE"
+                  : activeRecord.hardwareAttestation.valid
+                    ? "VERIFIED ONCHAIN"
+                    : "NOT VERIFIED"}
+              </b>
             </div>
             <div className="passport-enclave-item">
               <span>NETWORK:</span>
@@ -568,7 +617,7 @@ function PassportView() {
                 </div>
 
                 <div className="passport-kv-item">
-                  <span className="passport-kv-label">Physical TPM Session Key</span>
+                  <span className="passport-kv-label">Machine Session Key</span>
                   <div className="passport-kv-value-row">
                     <span className="passport-kv-val" title={activeRecord.signer}>
                       {shortHex(activeRecord.signer)}
@@ -578,7 +627,7 @@ function PassportView() {
                 </div>
 
                 <div className="passport-kv-item">
-                  <span className="passport-kv-label">Operator Safe Multisig</span>
+                  <span className="passport-kv-label">Operator</span>
                   <div className="passport-kv-value-row">
                     <span className="passport-kv-val" title={activeRecord.operator}>
                       {shortHex(activeRecord.operator)}
@@ -642,17 +691,28 @@ function PassportView() {
                 <div className="passport-kv-item">
                   <span className="passport-kv-label">Key Protection Level</span>
                   <div className="passport-kv-value-row">
-                    <span className="passport-kv-val" style={{ color: "#4ade80" }}>
-                      NON-EXPORTABLE (TPM / SE)
-                    </span>
+                    {activeSampleInfo ? (
+                      <span className="passport-kv-val" style={{ color: "#4ade80" }}>
+                        NON-EXPORTABLE (TPM / SE)
+                      </span>
+                    ) : (
+                      <span className="passport-kv-val" style={{ color: "var(--mut)" }}>
+                        NOT VERIFIABLE ONCHAIN
+                      </span>
+                    )}
                   </div>
                 </div>
 
                 <div className="passport-kv-item">
                   <span className="passport-kv-label">Autonomous Spend Policy</span>
                   <div className="passport-kv-value-row">
-                    <span className="passport-kv-val" style={{ color: "#eee" }}>
-                      ACTIVE · DAILY CAP ENFORCED
+                    <span
+                      className="passport-kv-val"
+                      style={{ color: activeSampleInfo ? "#eee" : "var(--mut)" }}
+                    >
+                      {activeSampleInfo
+                        ? "ACTIVE · DAILY CAP ENFORCED"
+                        : "NOT INCLUDED IN PASSPORT"}
                     </span>
                   </div>
                 </div>
