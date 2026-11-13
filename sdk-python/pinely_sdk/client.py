@@ -191,10 +191,13 @@ class MachineClient:
         if challenge.status_code != 402:
             return fail(f"Resource did not return HTTP 402 (got {challenge.status_code}).")
         try:
-            accepts = challenge.json().get("accepts") or []
+            body = challenge.json()
         except ValueError:
-            accepts = []
-        if not accepts:
+            body = None
+        # A malformed challenge (a JSON list, string or null, or entries that are not objects) must come back
+        # as a failed payment, never as an exception that takes the machine process down.
+        accepts = body.get("accepts") if isinstance(body, dict) else None
+        if not isinstance(accepts, list) or not accepts or not isinstance(accepts[0], dict):
             return fail("The 402 challenge contains no payment requirements.")
         accept = accepts[0]
 
@@ -202,8 +205,10 @@ class MachineClient:
         asset = str(accept.get("asset") or "")
         if not asset or asset.lower() != self.stablecoin_address.lower():
             return fail("The 402 challenge asks for an asset other than the configured stablecoin.")
+        extra = accept.get("extra")
+        raw_chain = extra.get("chainId") if isinstance(extra, dict) else None
         try:
-            challenge_chain = int((accept.get("extra") or {}).get("chainId"))
+            challenge_chain = int(raw_chain) if raw_chain is not None else None
         except (TypeError, ValueError):
             challenge_chain = None
         if challenge_chain != self.chain_id:
@@ -212,8 +217,8 @@ class MachineClient:
         if not pay_to or not Web3.is_address(pay_to):
             return fail("The 402 challenge has no valid payTo address.")
         try:
-            amount = int(accept.get("maxAmountRequired"))
-        except (TypeError, ValueError):
+            amount = int(accept["maxAmountRequired"])
+        except (KeyError, TypeError, ValueError):
             return fail("The 402 challenge has no valid amount.")
         if amount <= 0 or amount > max_amount:
             return fail("The 402 challenge asks for more than max_amount.", amount)
@@ -297,6 +302,8 @@ class MachineClient:
         try:
             data = resp.json()
         except ValueError:
+            data = {}
+        if not isinstance(data, dict):
             data = {}
         if data.get("status") != "settled" or not data.get("txHash") or not data.get("accessToken"):
             return fail("Facilitator response did not confirm a settled payment.", amount)

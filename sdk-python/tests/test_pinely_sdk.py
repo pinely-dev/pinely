@@ -456,6 +456,32 @@ class TestPaymentFlow(unittest.TestCase):
         self.assertEqual(result["status"], "failed")
         self.assertNotIn("accessToken", result)
 
+    def test_pay_returns_failed_instead_of_raising_on_a_malformed_challenge(self):
+        # A resource that answers 402 with a body that is not the expected object must never crash the machine.
+        entry = challenge().json()["accepts"][0]
+        cases = {
+            "json list": response(402, []),
+            "json string": response(402, "not an object"),
+            "json null": response(402, None),
+            "accepts is an object": response(402, {"accepts": entry}),
+            "accepts entry is a string": response(402, {"accepts": ["x"]}),
+            "extra is a string": response(402, {"accepts": [{**entry, "extra": "46630"}]}),
+            "chainId is not a number": response(402, {"accepts": [{**entry, "extra": {"chainId": "abc"}}]}),
+        }
+        for label, bad in cases.items():
+            with self.subTest(label):
+                result, seen = self.run_pay(challenge_reply=bad)
+                self.assertEqual(result["status"], "failed")
+                self.assertEqual(seen["prepare"], 0)
+                self.assertEqual(seen["settle"], 0)
+
+    def test_pay_fails_when_the_settle_response_is_not_a_json_object(self):
+        for label, bad in {"list": ["settled"], "string": "settled"}.items():
+            with self.subTest(label):
+                result, _ = self.run_pay(settle=bad)
+                self.assertEqual(result["status"], "failed")
+                self.assertNotIn("accessToken", result)
+
 
 if __name__ == "__main__":
     unittest.main()

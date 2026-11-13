@@ -1,13 +1,28 @@
 # PINELY Python SDK
 
-Python package for autonomous machine finance on Robinhood Chain (testnet `46630`, mainnet `4663`). It mirrors the
-TypeScript SDK (`@pinely-protocol/sdk`):
+Python package for autonomous machine finance on Robinhood Chain (testnet `46630`, mainnet `4663`). It implements
+the same signing and payment flow as the TypeScript SDK (`@pinely-protocol/sdk`), and produces identical machine
+IDs and signatures for identical inputs. It is a **subset** of the TypeScript API, see [Limitations](#limitations).
 
 - Machine key store abstraction (`DevKeyStore`, `KeyStore`).
 - EIP-712 signing for revenue swaps (`SwapIntent`) and HTTP 402 payments (`Payment402Intent`).
 - `hookData` encoding for the PinelyHook (Stage 2).
 
 ## Install
+
+This is a beta release (`0.1.0b1`). While it is the only release, a plain install picks it up:
+
+```bash
+pip install pinely-sdk
+```
+
+Once a stable release exists, pip skips pre-releases unless you pass `--pre`, so use `pip install --pre pinely-sdk`
+to keep following the beta channel.
+
+Supported dependency ranges: `web3` 7.0 to 8.x, `eth-account` 0.13.1 or newer, `requests` 2.31 or newer. The
+test suite was run on Python 3.12 with both the lowest and the highest of these combinations.
+
+From a clone of the repository (development):
 
 ```bash
 pip install -e sdk-python
@@ -22,8 +37,8 @@ pinely = Pinely.connect(
     private_key="0x...",
     chain_id=46630,
     registry_address="0x...",  # MachineRegistry, from the deployment address book
-    stablecoin_address="0x...",      # canonical stablecoin, from the official Robinhood Chain documentation
-    paymaster_address="0x...", # PinelyPaymaster, required for payments
+    stablecoin_address="0x...",  # canonical stablecoin, from the official Robinhood Chain documentation
+    paymaster_address="0x...",  # PinelyPaymaster, required for payments
 )
 machine = pinely.machines.create(name="autonomous-delivery-01", operator="0x...")
 
@@ -46,6 +61,18 @@ result = machine.pay(
 - **Replay isolation.** The domains are `PINELY` and `PINELYFacilitator`, bound to the chain id. Tests assert
   digests identical to the TypeScript SDK and the contract's type hash, so signatures from any earlier
   deployment never verify.
+
+## Limitations
+
+This beta covers signing, hashing and the HTTP 402 payment flow. Compared with the TypeScript SDK it does **not**
+provide:
+
+- **A hardware key store.** `Pinely.connect()` takes a private key and always uses `DevKeyStore`, an in-memory key
+  for development. Do not use it for a key that controls real funds on production hardware.
+- **On-chain reads.** There is no `rpc_url`, so there is no machine info lookup and no kill-switch (`isFrozen`) check.
+- **Transaction builders** for freeze, unfreeze, policy changes and surplus sweeping.
+
+The SDK is not externally audited.
 
 ## Tests
 
