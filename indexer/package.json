@@ -1,0 +1,25 @@
+{
+  "name": "@pinely/indexer",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "scripts": {
+    "dev": "ponder dev",
+    "start": "ponder start",
+    "codegen": "ponder codegen",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@pinely/shared": "workspace:*",
+    "@ponder/core": "^0.7.17",
+    "dotenv": "^17.2.3",
+    "viem": "^2.56.9"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "typescript": "~5.9.3"
+  }
+}

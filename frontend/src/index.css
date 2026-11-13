@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* Minimal root base styles for Next.js app */
+html {
+  color-scheme: dark;
+}

@@ -1,0 +1,18 @@
+{
+  "name": "@pinely/shared",
+  "private": true,
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./chains": "./chains/index.ts",
+    "./contracts": "./contracts/index.ts",
+    "./csv": "./csv.ts",
+    "./wallet-errors": "./wallet-errors.ts",
+    "./types": "./types/index.ts"
+  },
+  "dependencies": {
+    "viem": "^2.56.9"
+  }
+}

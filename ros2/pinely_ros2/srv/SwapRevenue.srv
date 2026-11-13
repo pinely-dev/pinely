@@ -1,0 +1,8 @@
+string token_in
+uint64 amount_in
+uint64 min_amount_out
+---
+bool success
+uint64 amount_out
+string tx_hash
+string error

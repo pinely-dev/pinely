@@ -1,0 +1,8 @@
+# Vercel Deployment Ignore
+# Only ignore heavy git submodules and non-build assets.
+# DO NOT ignore workspace packages (backend/, contracts/, indexer/, etc.)
+# because root package.json requires all workspaces to be intact for `bun install`.
+contracts/lib/
+*.md
+.dockerignore
+docker-compose.yml

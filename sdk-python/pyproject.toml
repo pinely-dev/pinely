@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pinely-sdk"
+version = "0.1.0"
+description = "PINELY Python SDK — Hardware & autonomous machine finance protocol on Robinhood Chain"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "PINELY Engineering" }]
+dependencies = [
+    "web3>=7.0.0",
+    "eth-account>=0.13.0",
+    "requests>=2.31.0",
+]

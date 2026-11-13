@@ -1,0 +1,38 @@
+node_modules/
+.wrangler/
+.vercel/
+output/
+dist/
+
+# Frontend build output
+.next/
+frontend/.next/
+frontend/dist/
+
+# Indexer build output
+.ponder/
+indexer/.ponder/
+
+# Contract compile output. Do NOT ignore contracts/ignition/deployments/
+# or contracts/broadcast/: both hold the deployed addresses that
+# scripts/sync-contracts.mjs reads. Only dry-run simulations are ignored.
+contracts/artifacts/
+contracts/cache/
+contracts/out/
+contracts/types/
+contracts/broadcast/**/dry-run/
+
+.env
+.env.*
+!.env.example
+.keystore
+contracts/.keystore
+documents
+/cache/
+# Python / TypeScript build artifacts
+__pycache__/
+*.pyc
+*.tsbuildinfo
+
+# Ponder generated artifacts (recreated by `ponder dev`/`ponder codegen`)
+indexer/generated/

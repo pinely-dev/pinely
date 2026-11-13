@@ -1,0 +1,2 @@
+# Solidity sources must be LF so `forge fmt --check` is stable on Windows checkouts.
+*.sol text eol=lf

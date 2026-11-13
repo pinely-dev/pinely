@@ -1,0 +1,9 @@
+string url
+uint64 max_amount
+string resource_id
+---
+bool success
+uint64 amount_paid
+string tx_hash
+string access_token
+string error
