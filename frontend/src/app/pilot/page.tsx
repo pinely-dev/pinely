@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { isAddress } from "viem";
 import Link from "next/link";
 import type { PilotHardwareEnclave, PilotMachineType } from "@pinely/shared/types";
 import { isApiError, submitPilotApplication } from "@/lib/api";
@@ -22,8 +23,8 @@ const MACHINE_TYPE_OPTIONS: readonly SelectOption<PilotMachineType>[] = [
 ];
 
 const SECURITY_CHIP_OPTIONS: readonly SelectOption<PilotHardwareEnclave>[] = [
-  { value: "NXP SE050 TPM", label: "NXP SE050 TPM (EAL6+)" },
-  { value: "STSAFE-A110", label: "STSAFE-A110 (EAL5+)" },
+  { value: "NXP SE050 TPM", label: "NXP SE050 TPM" },
+  { value: "STSAFE-A110", label: "STSAFE-A110" },
   { value: "Microchip ATECC608", label: "Microchip ATECC608" },
   { value: "Infineon OPTIGA TPM", label: "Infineon OPTIGA TPM 2.0" },
   { value: "Software Keystore / Testing", label: "Software Keystore / Evaluating" },
@@ -38,7 +39,7 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   );
 }
 
-type PilotField = "name" | "company" | "email" | "fleetSize";
+type PilotField = "name" | "company" | "email" | "fleetSize" | "operatorAddress" | "safeAddress";
 type PilotErrors = Partial<Record<PilotField, string>>;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -49,6 +50,8 @@ function validatePilotForm(data: {
   company: string;
   email: string;
   fleetSize: number;
+  operatorAddress: string;
+  safeAddress: string;
 }): PilotErrors {
   const errors: PilotErrors = {};
   if (!data.name.trim()) errors.name = "Enter your name.";
@@ -57,6 +60,13 @@ function validatePilotForm(data: {
   if (!Number.isInteger(data.fleetSize) || data.fleetSize < 1) {
     errors.fleetSize = "Enter a fleet size of 1 or more.";
   }
+  // Both addresses are optional; when given they must be real 0x addresses.
+  const validAddress = (value: string) =>
+    !value.trim() ||
+    (isAddress(value.trim(), { strict: false }) && !/^0x0{40}$/.test(value.trim()));
+  if (!validAddress(data.operatorAddress))
+    errors.operatorAddress = "Enter a valid 0x wallet address.";
+  if (!validAddress(data.safeAddress)) errors.safeAddress = "Enter a valid 0x Safe address.";
   return errors;
 }
 
@@ -67,7 +77,10 @@ export default function PilotPage() {
     email: "",
     machineType: "Autonomous Delivery Rover" as PilotMachineType,
     fleetSize: 10,
-    hardwareEnclave: "NXP SE050 TPM" as PilotHardwareEnclave,
+    // Hardware key storage is planned, so nothing is preselected: pilots start with software keys.
+    hardwareEnclave: "Software Keystore / Testing" as PilotHardwareEnclave,
+    operatorAddress: "",
+    safeAddress: "",
     notes: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -99,6 +112,8 @@ export default function PilotPage() {
         machineType: formData.machineType,
         deviceCount: Number(formData.fleetSize),
         hardwareEnclave: formData.hardwareEnclave,
+        operatorAddress: formData.operatorAddress.trim() || undefined,
+        safeAddress: formData.safeAddress.trim() || undefined,
         notes: formData.notes,
       });
       setAppId(`PLT-${String(result.data.id).padStart(5, "0")}`);
@@ -150,7 +165,7 @@ export default function PilotPage() {
                 style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
               >
                 <h2>Sponsored native gas</h2>
-                <span className="tier-pill gold">Zero Custody</span>
+                <span className="tier-pill gold">Paymaster-sponsored</span>
               </div>
               <p className="note" style={{ marginTop: "8px", lineHeight: 1.5 }}>
                 Physical devices never hold volatile native {nativeSymbol} on the street.
@@ -239,9 +254,9 @@ export default function PilotPage() {
                       marginTop: "8px",
                     }}
                   >
-                    Our core engineering team will reach out to <strong>{formData.email}</strong>{" "}
-                    within 24 hours with {activeChain.name} ({activeChain.id}) onboarding
-                    credentials, starter gas sponsorship, and direct Slack / Telegram channel setup.
+                    Our core engineering team will reach out to <strong>{formData.email}</strong> to
+                    discuss onboarding. Pilots start on testnet and move to mainnet once your fleet
+                    is ready.
                   </p>
                 </div>
 
@@ -288,7 +303,9 @@ export default function PilotPage() {
                         email: "",
                         machineType: "Autonomous Delivery Rover",
                         fleetSize: 10,
-                        hardwareEnclave: "NXP SE050 TPM",
+                        hardwareEnclave: "Software Keystore / Testing",
+                        operatorAddress: "",
+                        safeAddress: "",
                         notes: "",
                       });
                     }}
@@ -319,9 +336,9 @@ export default function PilotPage() {
                         Apply for Founding Fleet Pilot
                       </h2>
                       <p className="note" style={{ marginTop: "6px", lineHeight: 1.5 }}>
-                        Complete the registration questionnaire below. Our core team provisions
-                        custom testnet Paymaster gas sponsorship, developer keys, and private
-                        engineering channels within 24 hours.
+                        Complete the registration questionnaire below. Our core team reviews every
+                        application and replies by email. Pilots start on testnet and move to
+                        mainnet once your fleet is ready.
                       </p>
                     </div>
 
@@ -345,10 +362,10 @@ export default function PilotPage() {
                           </svg>
                         </div>
                         <div className="pilot-sla-content">
-                          <span className="pilot-sla-title">24-Hour Provisioning SLA</span>
+                          <span className="pilot-sla-title">How the Pilot Starts</span>
                           <span className="pilot-sla-desc">
-                            Guaranteed credentials and testnet Paymaster deployment within 24 hours
-                            of submission.
+                            Pilots start on testnet, then move to mainnet once your fleet is ready.
+                            We reply to every application.
                           </span>
                         </div>
                       </div>
@@ -401,10 +418,10 @@ export default function PilotPage() {
                           </svg>
                         </div>
                         <div className="pilot-sla-content">
-                          <span className="pilot-sla-title">Non-Exportable Key Bridge</span>
+                          <span className="pilot-sla-title">Hardware Key Support (Planned)</span>
                           <span className="pilot-sla-desc">
-                            Direct integration support for TPM 2.0 / NXP SE050 hardware security
-                            modules.
+                            Planned: support for TPM 2.0 and NXP SE050 hardware modules. Pilot
+                            machines start with software session keys.
                           </span>
                         </div>
                       </div>
@@ -528,6 +545,55 @@ export default function PilotPage() {
                       <FieldError id="pilot-email-error" message={errors.email} />
                     </label>
 
+                    {/* Dual Column: operator wallet and Safe (both optional) */}
+                    <div className="pilot-form-grid-2">
+                      <label>
+                        Operator wallet address (optional)
+                        <input
+                          id="pilot-operatorAddress"
+                          type="text"
+                          autoComplete="off"
+                          spellCheck={false}
+                          placeholder="0x…"
+                          className="font-mono"
+                          value={formData.operatorAddress}
+                          aria-invalid={errors.operatorAddress ? true : undefined}
+                          aria-describedby={
+                            errors.operatorAddress ? "pilot-operatorAddress-error" : undefined
+                          }
+                          onChange={(e) => {
+                            setFormData({ ...formData, operatorAddress: e.target.value });
+                            setErrors((prev) => ({ ...prev, operatorAddress: undefined }));
+                          }}
+                        />
+                        <FieldError
+                          id="pilot-operatorAddress-error"
+                          message={errors.operatorAddress}
+                        />
+                      </label>
+                      <label>
+                        Safe address (optional)
+                        <input
+                          id="pilot-safeAddress"
+                          type="text"
+                          autoComplete="off"
+                          spellCheck={false}
+                          placeholder="0x…"
+                          className="font-mono"
+                          value={formData.safeAddress}
+                          aria-invalid={errors.safeAddress ? true : undefined}
+                          aria-describedby={
+                            errors.safeAddress ? "pilot-safeAddress-error" : undefined
+                          }
+                          onChange={(e) => {
+                            setFormData({ ...formData, safeAddress: e.target.value });
+                            setErrors((prev) => ({ ...prev, safeAddress: undefined }));
+                          }}
+                        />
+                        <FieldError id="pilot-safeAddress-error" message={errors.safeAddress} />
+                      </label>
+                    </div>
+
                     {/* Dual Column: Machine Type & Security Chip */}
                     <div className="pilot-form-grid-2">
                       <label>
@@ -541,14 +607,14 @@ export default function PilotPage() {
                       </label>
 
                       <label>
-                        Security chip on your machines
+                        Security chip on your machines (optional, planned)
                         <Select
                           value={formData.hardwareEnclave}
                           onChange={(hardwareEnclave) =>
                             setFormData({ ...formData, hardwareEnclave })
                           }
                           options={SECURITY_CHIP_OPTIONS}
-                          ariaLabel="Security chip on your machines"
+                          ariaLabel="Security chip on your machines (optional, planned)"
                         />
                       </label>
                     </div>

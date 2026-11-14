@@ -6,7 +6,12 @@ import { getActiveChain } from "@pinely/shared/chains";
 import type { ApiMeta, EcosystemStats } from "@pinely/shared/types";
 import { checkDatabase } from "./db/connection";
 import { ContractNotDeployedError, getBackendChainId, notDeployedBody } from "./lib/config";
-import { IndexerUnavailableError, indexerUnavailableBody, queryIndexer } from "./lib/indexer";
+import {
+  INDEXER_RETRY_AFTER_SECONDS,
+  IndexerUnavailableError,
+  indexerUnavailableBody,
+  queryIndexer,
+} from "./lib/indexer";
 import { ChainUnavailableError, chainUnavailableBody } from "./lib/machine-reads";
 import actionsRoute from "./routes/actions";
 import authRoute from "./routes/auth";
@@ -64,7 +69,9 @@ app.onError((err, c) => {
     return c.json(notDeployedBody(err.contract), 503);
   }
   if (err instanceof IndexerUnavailableError) {
-    return c.json(indexerUnavailableBody(), 503);
+    return c.json(indexerUnavailableBody(), 503, {
+      "Retry-After": String(INDEXER_RETRY_AFTER_SECONDS),
+    });
   }
   if (err instanceof ChainUnavailableError) {
     return c.json(chainUnavailableBody(), 503);

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { formatUnits } from "viem";
 import { findContractAddress } from "@pinely/shared/contracts";
-import { activeChain, stablecoinSymbol, nativeSymbol, blockTimeLabel } from "@/lib/chain";
+import { activeChain, stablecoinSymbol, nativeSymbol } from "@/lib/chain";
 import { useBurnEvents } from "@/lib/api";
 import { shortHex } from "@/lib/machine-view";
 import { TextScramble } from "@/components/pinely/TextScramble";
@@ -13,6 +13,7 @@ import { Navbar } from "@/components/pinely/Navbar";
 import { PageBackground } from "@/components/pinely/PageBackground";
 import { Footer } from "@/components/pinely/Footer";
 import { TokenCa } from "@/components/pinely/TokenCa";
+import { Stage2Banner } from "@/components/pinely/StageBadge";
 
 const VOLUME_PRESETS = [100000, 250000, 500000, 1000000, 5000000];
 
@@ -34,7 +35,7 @@ export default function BurnPage() {
   const hookFeeAccrued = projectedVolume * 0.0005;
   const facilitatorAccrued = projectedVolume * 0.3 * 0.001;
   const monthlyProtocolFees = hookFeeAccrued + facilitatorAccrued + 5000; // includes SDK and registration float
-  const monthlyToBurnVaultStable = monthlyProtocolFees * 0.2 + 2500; // includes launchpad split allocation
+  const monthlyToBurnVaultStable = monthlyProtocolFees * (0.2 + 0.3); // 20% protocol stream + 30% creator stream
   const estimatedTokenPrice = 0.1; // simulated baseline price $0.10
   const estimatedTokensBurned = monthlyToBurnVaultStable / estimatedTokenPrice;
 
@@ -55,8 +56,8 @@ export default function BurnPage() {
           </span>
           <h1>Fees in, $PINELY out.</h1>
           <p>
-            Real operational cash flows from autonomous machines convert continuously into $PINELY
-            burning. Every burn permanently destroys tokens and emits an onchain indexed{" "}
+            Real operational cash flows from autonomous machines will convert into $PINELY burning.
+            Every burn will permanently destroy tokens and emit an onchain indexed{" "}
             <code className="font-mono text-zinc-200">Burned(uint256 amount)</code> event.
           </p>
         </section>
@@ -121,44 +122,11 @@ export default function BurnPage() {
                       : "Burn total unavailable"}
               </span>
             </span>
-            <span className="telemetry-chip">
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
-              <span>100% Non-Custodial Burn</span>
-            </span>
-            <span className="telemetry-chip">
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-              <span>Block time {blockTimeLabel}</span>
-            </span>
           </div>
         </div>
 
         <section className="sec" style={{ paddingTop: "12px" }}>
+          {!burnVault && <Stage2Banner />}
           {/* Live tracker: only where BurnVault exists; otherwise the page says it is not live yet. */}
           {burnVault && <BurnTracker />}
 
@@ -175,7 +143,7 @@ export default function BurnPage() {
                 </div>
                 <h2 className="flow-card-title">Launchpad & Secondary Trading Volume</h2>
                 <p className="note" style={{ lineHeight: 1.5, margin: 0 }}>
-                  Trading fees generated at the token launch venue flow directly through
+                  Trading fees generated at the token launch venue will flow directly through
                   CreatorFeeSplitter.sol into automated token burning.
                 </p>
               </div>
@@ -197,7 +165,7 @@ export default function BurnPage() {
                       <span className="target-code">BurnVault.sol</span>
                     </div>
                     <div className="split-pillar-desc">
-                      Converted into $PINELY and destroyed onchain.
+                      Will be converted into $PINELY and destroyed onchain.
                     </div>
                   </div>
 
@@ -239,7 +207,7 @@ export default function BurnPage() {
                   <div className="split-meter-ticks font-mono">
                     <span>0% INFLOW</span>
                     <span className="split-tick-marker">30% / 70% SPLIT RATIO</span>
-                    <span>100% SETTLED</span>
+                    <span>100%</span>
                   </div>
                 </div>
               </div>
@@ -261,9 +229,9 @@ export default function BurnPage() {
                   <span className="dossier-spec-val font-mono">Launch venue to be announced</span>
                 </div>
                 <div className="dossier-spec-row">
-                  <span className="dossier-spec-label">CUSTODY RISK</span>
+                  <span className="dossier-spec-label">TREASURY</span>
                   <span className="dossier-spec-val font-mono text-zinc-300">
-                    Zero Custody · Autonomous Route
+                    Safe Multisig (2-of-3)
                   </span>
                 </div>
               </div>
@@ -280,9 +248,9 @@ export default function BurnPage() {
                 </div>
                 <h2 className="flow-card-title">DePIN Machine Infrastructure & Swaps</h2>
                 <p className="note" style={{ lineHeight: 1.5, margin: 0 }}>
-                  Revenues collected in {stablecoinSymbol} across the stack: Uniswap v4 Hook swap
-                  fees (0.05%), machine registrations ($2), SDK node fees ($1/mo), and Facilitator
-                  payments (0.1%).
+                  Revenues will be collected in {stablecoinSymbol} across the stack: Uniswap v4 Hook
+                  swap fees (0.05%), machine registrations ($2), SDK node fees ($1/mo), and
+                  Facilitator payments (0.1%).
                 </p>
               </div>
 
@@ -303,7 +271,7 @@ export default function BurnPage() {
                       <span className="target-code">BurnVault.sol</span>
                     </div>
                     <div className="split-pillar-desc">
-                      Surplus revenues continuously retired into $PINELY.
+                      Surplus revenues will be retired into $PINELY.
                     </div>
                   </div>
 
@@ -345,7 +313,7 @@ export default function BurnPage() {
                   <div className="split-meter-ticks font-mono">
                     <span>0% INFLOW</span>
                     <span className="split-tick-marker">20% / 80% SPLIT RATIO</span>
-                    <span>100% SETTLED</span>
+                    <span>100%</span>
                   </div>
                 </div>
               </div>
@@ -471,7 +439,7 @@ export default function BurnPage() {
                   </span>
                 </div>
                 <div className="stake-econ-row">
-                  <span className="stake-econ-label">ALLOCATED TO BURNVAULT (20% + CREATOR)</span>
+                  <span className="stake-econ-label">ALLOCATED TO BURNVAULT (20% + 30%)</span>
                   <span className="stake-econ-val">
                     ${monthlyToBurnVaultStable.toFixed(2)} {stablecoinSymbol} / mo
                   </span>
@@ -503,7 +471,7 @@ export default function BurnPage() {
 
           {/* Section Hairline Label */}
           <div className="section-hairline-label" style={{ marginTop: "48px" }}>
-            <span>SECTION 02 · ARCHITECTURAL GUARANTEES & ONCHAIN VERIFICATION</span>
+            <span>SECTION 02 · HOW IT WORKS & ONCHAIN VERIFICATION</span>
           </div>
 
           {/* Architectural Guarantees Grid */}
@@ -519,9 +487,10 @@ export default function BurnPage() {
                 Autonomous Permissionless Execution
               </h2>
               <p className="note" style={{ lineHeight: 1.5, margin: 0 }}>
-                Anyone can trigger <code className="font-mono text-xs">BurnVault.burn()</code>{" "}
-                permissionlessly once accumulated {stablecoinSymbol} reaches the minimum swap
-                threshold. No team keys or multisig authorizations required.
+                Once deployed, anyone will be able to trigger{" "}
+                <code className="font-mono text-xs">BurnVault.burn()</code> permissionlessly once
+                accumulated {stablecoinSymbol} reaches the minimum swap threshold. No team keys or
+                multisig authorizations required.
               </p>
             </div>
 
@@ -536,7 +505,7 @@ export default function BurnPage() {
                 Full Onchain Traceability
               </h2>
               <p className="note" style={{ lineHeight: 1.5, margin: 0 }}>
-                Every burn transaction emits an indexed{" "}
+                Every burn transaction will emit an indexed{" "}
                 <code className="font-mono text-xs">Burned(uint256 amount)</code> event readable on
                 the Robinhood Chain block explorer and ingested in real time by Ponder.
               </p>
@@ -553,16 +522,15 @@ export default function BurnPage() {
                   className="card-module-badge font-mono"
                   style={{ color: "var(--bl)", borderColor: "rgba(224, 72, 107, 0.4)" }}
                 >
-                  MODULE 03 · IMMUTABILITY
+                  MODULE 03 · TREASURY
                 </span>
                 <span className="status-indicator-dot online" aria-hidden="true" />
               </div>
               <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#ffffff", margin: 0 }}>
-                Zero Backdoors Guarantee
+                Treasury Share
               </h2>
               <p className="note" style={{ lineHeight: 1.5, margin: 0 }}>
-                No owner drain function, no emergency withdrawal to private keys, and no pause
-                mechanisms. Accrued revenue can only be swapped into $PINELY and burned.
+                The treasury share of every split will go to the PINELY Safe, a 2-of-3 multisig.
               </p>
             </div>
           </div>

@@ -768,7 +768,42 @@ describe("Backend API & Facilitator — Integration Test Suite", () => {
         "NXP SE050 TPM",
         "fleet@example.com",
         "Warehouse pilot",
+        null,
+        null,
       ]);
+    });
+
+    it("should store the operator and Safe addresses in checksum form", async () => {
+      const query = spyOn(pool, "query").mockResolvedValue({
+        rows: [{ id: 43, createdAt: "2026-11-14T00:00:00.000Z" }],
+      } as never);
+      const res = await post({
+        ...validApplication,
+        operatorAddress: "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+        safeAddress: " 0x340B621D1BB4Be8b25D75fbBD9a628eD491030dD ",
+      });
+      expect(res.status).toBe(201);
+      const values = query.mock.calls[0][1] as unknown[];
+      expect(values.slice(-2)).toEqual([
+        "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+        "0x340B621D1BB4Be8b25D75fbBD9a628eD491030dD",
+      ]);
+    });
+
+    it("should reject an invalid operator or Safe address, including the zero address", async () => {
+      const query = spyOn(pool, "query").mockResolvedValue({ rows: [] } as never);
+      const zero = "0x0000000000000000000000000000000000000000";
+      for (const bad of ["0x123", "not-an-address", zero]) {
+        pilotRateLimiter.reset();
+        const operator = await post({ ...validApplication, operatorAddress: bad });
+        expect(operator.status).toBe(400);
+        expect((await operator.json()).error).toBe("Invalid operator wallet address");
+        pilotRateLimiter.reset();
+        const safe = await post({ ...validApplication, safeAddress: bad });
+        expect(safe.status).toBe(400);
+        expect((await safe.json()).error).toBe("Invalid Safe address");
+      }
+      expect(query).not.toHaveBeenCalled();
     });
 
     it("should not leak database error text when storing fails", async () => {

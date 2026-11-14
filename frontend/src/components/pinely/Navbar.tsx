@@ -6,6 +6,8 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { WalletButton } from "./WalletButton";
+import { CopyCaButton } from "./CopyCaButton";
+import { TokenCa } from "./TokenCa";
 import { X_URL } from "@/lib/site";
 
 function XIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -123,6 +125,8 @@ export function Navbar() {
             <XIcon width={16} height={16} />
           </a>
 
+          <CopyCaButton />
+
           <div className="hidden lg:block">
             <WalletButton />
           </div>
@@ -236,6 +240,9 @@ export function Navbar() {
               >
                 <XIcon width={16} height={16} />
               </a>
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <TokenCa variant="footer" />
+              </div>
               <div style={{ display: "flex", justifyContent: "center" }}>
                 <WalletButton fullWidth />
               </div>

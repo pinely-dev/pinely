@@ -59,10 +59,23 @@ const DEAD_ADDRESS = "0x000000000000000000000000000000000000dEaD" as const;
 function optionalDeployed(name: string): `0x${string}` {
   const address = findContractAddress(chainId, name);
   if (address) return address as `0x${string}`;
-  console.warn(
+  // Plain log, not a warning: an undeployed Stage 2 contract is the expected state, and Railway
+  // paints anything on stderr red.
+  console.log(
     `[PINELY Ponder] "${name}" is not deployed on chain ${chainId} (Stage 2). It will not be indexed.`,
   );
   return DEAD_ADDRESS;
+}
+
+/**
+ * A Stage 2 contract with no address points at the dead address, so a full-range `eth_getLogs` scan
+ * for it can never find anything. Limiting it to a single block (`endBlock = startBlock`) keeps the
+ * handlers registered while removing that wasted work from the backfill, which matters on a
+ * rate-limited RPC. Once the contract is deployed it has an address, this returns nothing, and it is
+ * indexed normally.
+ */
+function undeployedRange(name: string): { endBlock?: number } {
+  return findContractAddress(chainId, name) ? {} : { endBlock: startBlock };
 }
 
 // The schema of the indexed tables is decided by `ponder.schema.ts` (`onchainSchema`), not by this
@@ -123,30 +136,35 @@ export default createConfig({
       network: "chain",
       abi: pinelyRouterAbi,
       address: optionalDeployed("PinelyRouter"),
+      ...undeployedRange("PinelyRouter"),
       startBlock,
     },
     PinelyHook: {
       network: "chain",
       abi: pinelyHookAbi,
       address: optionalDeployed("PinelyHook"),
+      ...undeployedRange("PinelyHook"),
       startBlock,
     },
     BurnVault: {
       network: "chain",
       abi: burnVaultAbi,
       address: optionalDeployed("BurnVault"),
+      ...undeployedRange("BurnVault"),
       startBlock,
     },
     PinelyStake: {
       network: "chain",
       abi: pinelyStakeAbi,
       address: optionalDeployed("PinelyStake"),
+      ...undeployedRange("PinelyStake"),
       startBlock,
     },
     FleetSubscription: {
       network: "chain",
       abi: fleetSubscriptionAbi,
       address: optionalDeployed("FleetSubscription"),
+      ...undeployedRange("FleetSubscription"),
       startBlock,
     },
   },

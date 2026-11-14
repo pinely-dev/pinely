@@ -1,13 +1,20 @@
 import Link from "next/link";
 import Image from "next/image";
-import { activeChain, stablecoinSymbol, chainProfile, blockTimeLabel } from "@/lib/chain";
+import { isPublicChainId } from "@pinely/shared/chains";
+import { activeChain, stablecoinSymbol, chainProfile } from "@/lib/chain";
 import { X_URL } from "@/lib/site";
+import { RISK_DISCLAIMER } from "@pinely/shared/status";
 import { TokenCa } from "@/components/pinely/TokenCa";
-import { robinhoodTestnet, robinhoodMainnet } from "@pinely/shared/chains";
+import { NetworkBadge } from "@/components/pinely/StageBadge";
+import { WalletNetworkNotice } from "@/components/pinely/WalletNetworkNotice";
 
 export function Footer() {
   // The explorer comes from the chain definition (shared/chains), never from a URL typed here.
   const explorerUrl = activeChain.blockExplorers?.default.url;
+  // "Robinhood Chain Mainnet (4663)" or "Robinhood Chain Testnet (46630)", from the chain profile.
+  const networkName = isPublicChainId(activeChain.id)
+    ? `${chainProfile.shortName} Mainnet`
+    : chainProfile.shortName;
 
   return (
     <footer className="sf">
@@ -42,9 +49,13 @@ export function Footer() {
           }}
         >
           <span>
-            {chainProfile.shortName} · {blockTimeLabel}
+            Network: {networkName} ({activeChain.id})
           </span>
         </div>
+        <div style={{ marginTop: "8px" }}>
+          <NetworkBadge />
+        </div>
+        <WalletNetworkNotice />
         <div>
           <TokenCa variant="footer" />
         </div>
@@ -53,6 +64,9 @@ export function Footer() {
       <div>
         <p className="sf-title">Developers</p>
         <Link href="/docs">Documentation</Link>
+        <Link href="/contracts">Contracts</Link>
+        <Link href="/status">Status</Link>
+        <Link href="/proofs">Proofs</Link>
         {explorerUrl && (
           <a href={explorerUrl} target="_blank" rel="noopener noreferrer">
             Explorer ({activeChain.id}) ↗
@@ -72,9 +86,13 @@ export function Footer() {
       <div className="sf-b">
         <span>PINELY · Money for Physical AI · © 2026</span>
         <span>
-          Testnet: {robinhoodTestnet.id} · Mainnet: {robinhoodMainnet.id} · Verify official domain
-          before connecting.
+          Network: {networkName} ({activeChain.id}) · Verify the official domain before connecting.
         </span>
+      </div>
+
+      <div className="sf-risk">
+        <span>{RISK_DISCLAIMER}</span>
+        <Link href="/legal">Read the risk disclosure →</Link>
       </div>
     </footer>
   );

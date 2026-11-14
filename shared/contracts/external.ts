@@ -32,6 +32,9 @@ export const externalAddresses: Record<string, Record<string, Address>> = {
     EntryPoint: "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
     Multicall3: "0xcA11bde05977b3631167028862bE2a173976CA11",
     Permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+    // PINELY protocol Safe: `owner()` of MachineRegistry and PinelyPaymaster, and their treasury. Read from the
+    // chain on 2026-11-14: Safe 1.5.0, `getThreshold()` = 2, three owners (see docs/runbooks/evidence/).
+    ProtocolSafe: "0x340B621D1BB4Be8b25D75fbBD9a628eD491030dD",
     // Safe 1.3.0: bytecode exists at each address.
     SafeProxyFactory: "0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2",
     SafeSingleton: "0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552",

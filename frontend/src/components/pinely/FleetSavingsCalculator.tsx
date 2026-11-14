@@ -5,6 +5,7 @@ import Link from "next/link";
 import { TextScramble } from "./TextScramble";
 import { ScrollReveal } from "./ScrollReveal";
 import { stablecoinSymbol } from "@/lib/chain";
+import { StageBadge } from "@/components/pinely/StageBadge";
 
 export function FleetSavingsCalculator() {
   const [fleetSize, setFleetSize] = useState<number>(50);
@@ -44,11 +45,14 @@ export function FleetSavingsCalculator() {
             <span className="tag">
               <TextScramble text="ECONOMIC ENGINE & STAKING" />
             </span>
+            <div style={{ marginTop: "10px" }}>
+              <StageBadge variant="stage2" />
+            </div>
             <h2>A toll road for machine transactions.</h2>
             <p>
-              A credit score for robots. Good machines get cheaper money. Fleet operators stake
-              $PINELY to slash transaction fees by 83.3%, while protocol fees permanently burn
-              $PINELY tokens.
+              A credit score for robots. Good machines will get cheaper money. In Stage 2, fleet
+              operators will be able to stake $PINELY to cut transaction fees by 83.3%, and protocol
+              fees will fund $PINELY burns.
             </p>
           </div>
         </ScrollReveal>
@@ -127,7 +131,10 @@ export function FleetSavingsCalculator() {
               </div>
 
               <div className="calc-note">
-                <span>Enforced onchain via PinelyHook.sol & PinelyStake.sol.</span>
+                <span>
+                  To be enforced onchain via PinelyHook.sol & PinelyStake.sol (Stage 2, not
+                  deployed).
+                </span>
               </div>
             </div>
 

@@ -237,7 +237,7 @@ const SAMPLE_MACHINES: SampleMachine[] = [
     id: "0x945ebb5391f1f3ec0eaf55d0bd160c4bc4df67364d7e08086e5c1b2bf39fc3c1",
     alias: "PNLY-ROV-001",
     category: "Autonomous Delivery Rover",
-    chipModel: "NXP SE050 · EAL6+ Certified Hardware Security Module",
+    chipModel: "Illustrative sample · hardware keys are planned",
     tierName: "Gold",
     tier: 2,
     icon: "rover",
@@ -268,7 +268,7 @@ const SAMPLE_MACHINES: SampleMachine[] = [
     id: "0xa11ce00000000000000000000000000000000000000000000000000000000001",
     alias: "PNLY-DRN-002",
     category: "Aerial Inspection Drone",
-    chipModel: "STSAFE-A110 · Tamper-Resistant Cryptographic Element",
+    chipModel: "Illustrative sample · hardware keys are planned",
     tierName: "Silver",
     tier: 1,
     icon: "drone",
@@ -299,7 +299,7 @@ const SAMPLE_MACHINES: SampleMachine[] = [
     id: "0xb22ce00000000000000000000000000000000000000000000000000000000002",
     alias: "PNLY-EV-003",
     category: "EV Power Station",
-    chipModel: "Standard Physical Enclave · Baseline Authenticated Node",
+    chipModel: "Illustrative sample · hardware keys are planned",
     tierName: "Bronze",
     tier: 0,
     icon: "ev",
@@ -544,7 +544,7 @@ function PassportView() {
               <span
                 className={`passport-status-badge ${activeRecord.status === "ACTIVE" ? "active" : "frozen"}`}
               >
-                STATUS: {activeRecord.status} · SECURE ENCLAVE
+                STATUS: {activeRecord.status}
               </span>
               <span className={`passport-tier-badge ${activeRecord.tierName.toLowerCase()}`}>
                 {activeRecord.tierName.toUpperCase()} TIER ({tier?.fee ?? "0.05%"})
@@ -555,7 +555,7 @@ function PassportView() {
           {/* HARDWARE ENCLAVE ATTESTATION STRIP */}
           <div className="passport-enclave-strip">
             <div className="passport-enclave-item">
-              <span>HARDWARE ENCLAVE:</span>
+              <span>ATTESTATION RECORD:</span>
               <b>
                 {activeSampleInfo?.chipModel ??
                   (activeRecord.hardwareAttestation.hash
@@ -567,7 +567,7 @@ function PassportView() {
               <span>ROOT ATTESTATION:</span>
               <b>
                 {activeSampleInfo
-                  ? "TAMPER-PROOF NON-EXPORTABLE"
+                  ? "ILLUSTRATIVE SAMPLE"
                   : activeRecord.hardwareAttestation.valid
                     ? "VERIFIED ONCHAIN"
                     : "NOT VERIFIED"}
@@ -692,8 +692,8 @@ function PassportView() {
                   <span className="passport-kv-label">Key Protection Level</span>
                   <div className="passport-kv-value-row">
                     {activeSampleInfo ? (
-                      <span className="passport-kv-val" style={{ color: "#4ade80" }}>
-                        NON-EXPORTABLE (TPM / SE)
+                      <span className="passport-kv-val" style={{ color: "var(--mut)" }}>
+                        SOFTWARE KEY (HARDWARE STORAGE PLANNED)
                       </span>
                     ) : (
                       <span className="passport-kv-val" style={{ color: "var(--mut)" }}>
@@ -868,9 +868,8 @@ export default function PassportPage() {
           </span>
           <h1>Every machine gets papers.</h1>
           <p>
-            Verifiable onchain cryptographic identity, hardware security enclave, and settlement
-            track record for each registered machine, read directly from the PINELY indexer on
-            Robinhood Chain.
+            Verifiable onchain cryptographic identity and settlement track record for each
+            registered machine, read directly from the PINELY indexer on Robinhood Chain.
           </p>
         </section>
 

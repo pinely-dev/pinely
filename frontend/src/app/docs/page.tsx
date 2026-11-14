@@ -6,8 +6,9 @@ import { Navbar } from "@/components/pinely/Navbar";
 import { PageBackground } from "@/components/pinely/PageBackground";
 import { Footer } from "@/components/pinely/Footer";
 import { TextScramble } from "@/components/pinely/TextScramble";
-import { robinhoodTestnet, robinhoodMainnet } from "@pinely/shared/chains";
-import { chainProfile, nativeSymbol, stablecoinSymbol } from "@/lib/chain";
+import { StageBadge } from "@/components/pinely/StageBadge";
+import { isPublicChainId, robinhoodTestnet, robinhoodMainnet } from "@pinely/shared/chains";
+import { activeChain as buildChain, nativeSymbol, stablecoinSymbol } from "@/lib/chain";
 import { findContractAddress } from "@pinely/shared/contracts";
 
 interface ProtocolContractEntry {
@@ -110,7 +111,9 @@ const PROTOCOL_CONTRACTS: ProtocolContractEntry[] = [
 
 export default function DocsPage() {
   const [activeTab, setActiveTab] = useState<"ts" | "py" | "ros2">("ts");
-  const [activeNetwork, setActiveNetwork] = useState<"testnet" | "mainnet">("testnet");
+  const [activeNetwork, setActiveNetwork] = useState<"testnet" | "mainnet">(
+    isPublicChainId(buildChain.id) ? "mainnet" : "testnet",
+  );
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const copyToClipboard = (text: string, key: string) => {
@@ -134,7 +137,7 @@ const pinely = await Pinely.connect({
   chain: "robinhoodTestnet", // chain 46630
   registryAddress: "0x...", // MachineRegistry, from the address book
   paymasterAddress: "0x...", // PinelyPaymaster
-  keyStore: { type: "file-dev-only", privateKey: "0x..." },
+  keyStore: { type: "file-dev-only", privateKey: process.env.MACHINE_PRIVATE_KEY as \`0x\${string}\` }, // never commit a key
   rpcUrl: process.env.RPC_URL_ROBINHOOD_TESTNET,
 });
 const machine = await pinely.machines.create({ name: "charger-01", operator: "0x..." });
@@ -159,10 +162,11 @@ pip install pinely-sdk
 
 # 2. Connect. The Python SDK keeps the key in memory: for development only.
 #    It covers signing and HTTP 402 payments; it has no onchain reads or hardware key store yet.
+import os
 from pinely_sdk import Pinely
 
 pinely = Pinely.connect(
-    private_key="0x...",
+    private_key=os.environ["MACHINE_PRIVATE_KEY"],  # development key only: never commit it
     chain_id=${robinhoodTestnet.id},  # ${robinhoodTestnet.name}
     registry_address="0x...",  # MachineRegistry, from the address book
     stablecoin_address="0x...",  # ${stablecoinSymbol}, from the official network documentation
@@ -181,7 +185,7 @@ result = machine.pay(
 print(result["status"], result.get("txHash"))`,
 
     ros2: `# 1. Launch the PINELY ROS2 node
-#    Not published to a package index yet: build it from the ros2/ folder of the repository.
+#    Coming soon as a package. For now, build it from the ros2/ folder of the repository.
 ros2 run pinely_ros2 pinely_node --ros-args \\
   -p operator:="0x..." \\
   -p registry_address:="0x..." \\
@@ -228,7 +232,7 @@ ros2 service call /pinely/pay_service pinely_ros2/srv/PayService \\
           <span className="tag">
             <b className="dot" aria-hidden="true" /> Client SDKs
           </span>
-          <h2>Integrate in three lines of code.</h2>
+          <h2>Install an SDK and connect a machine.</h2>
           <p>
             The target design signs inside a hardware secure element so keys never leave the device.
             That support is planned: the SDK key stores are software today. Both published SDKs are
@@ -343,10 +347,9 @@ ros2 service call /pinely/pay_service pinely_ros2/srv/PayService \\
 
           <div className="card hl">
             <span className="text-xs text-crimson-400">Step 4</span>
-            <h3 style={{ marginTop: "6px" }}>PinelyHook (Uniswap v4, Stage 2)</h3>
+            <h3 style={{ marginTop: "6px" }}>PinelyHook (Uniswap v4, Stage 2: not deployed)</h3>
             <p style={{ fontSize: "14px", lineHeight: 1.5, color: "#f0dde2" }}>
-              Hook evaluates 4 immutable guards (Machine Gate, Spend Policy, Kill Switch, and Tier
-              Fee Cooling). Any violation reverts onchain fail-closed.
+              Planned: the hook will evaluate 4 immutable guards (Machine Gate, Spend Policy, Kill Switch, and Tier Fee Cooling), and any violation will revert onchain, fail-closed. It is not deployed, so Stage 1 has no onchain spend cap.
             </p>
           </div>
         </div>
@@ -436,7 +439,7 @@ ros2 service call /pinely/pay_service pinely_ros2/srv/PayService \\
               reused nonce is rejected.
             </li>
             <li>
-              <b>Spend limits:</b> enforced onchain by the Stage 2 PinelyHook Spend Policy, not by the Facilitator.
+              <b>Spend limits:</b> Stage 2, not deployed. The PinelyHook Spend Policy is meant to enforce the daily limit onchain, not the Facilitator. Stage 1 has no onchain spend cap today.
             </li>
           </ul>
         </div>
@@ -547,9 +550,12 @@ ros2 service call /pinely/pay_service pinely_ros2/srv/PayService \\
                     </td>
                     <td>
                       {isDeployed && address ? (
-                        <code style={{ fontSize: "12px", color: "#ffffff" }} title={address}>
-                          {`${address.substring(0, 10)}...${address.substring(address.length - 8)}`}
-                        </code>
+                        <div style={{ display: "grid", gap: "6px", justifyItems: "start" }}>
+                          <StageBadge variant={activeNetwork === "mainnet" ? "live" : "testnet"} />
+                          <code style={{ fontSize: "12px", color: "#ffffff" }} title={address}>
+                            {`${address.substring(0, 10)}...${address.substring(address.length - 8)}`}
+                          </code>
+                        </div>
                       ) : (
                         <span
                           style={{
@@ -558,7 +564,7 @@ ros2 service call /pinely/pay_service pinely_ros2/srv/PayService \\
                             fontSize: "12px",
                           }}
                         >
-                          {c.stage === "Stage 2" ? "Stage 2 Planned" : "Pending deployment"}
+                          {c.stage === "Stage 2" ? <StageBadge variant="stage2" /> : "Pending deployment"}
                         </span>
                       )}
                     </td>
@@ -621,8 +627,7 @@ ros2 service call /pinely/pay_service pinely_ros2/srv/PayService \\
             </strong>
           </div>
           <p className="note" style={{ color: "#ecd8de", lineHeight: 1.5, margin: 0 }}>
-            Blocks arrive about every {chainProfile.blockTimeMs}ms, and consecutive blocks can share
-            one <code className="font-mono text-zinc-100">block.timestamp</code>. On this chain,{" "}
+            Consecutive blocks can share one <code className="font-mono text-zinc-100">block.timestamp</code>. On this chain,{" "}
             <code className="font-mono text-zinc-100">block.number</code> in Solidity is the parent
             chain&apos;s block number, not this chain&apos;s: <strong>never</strong> use it as a
             unit of time or as an indexer start block. Evaluate daily limits, cooldowns, and

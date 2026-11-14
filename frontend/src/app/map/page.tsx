@@ -2,10 +2,12 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { activeChain, blockTimeLabel } from "@/lib/chain";
+import { activeChain } from "@/lib/chain";
+import { findContractAddress } from "@pinely/shared/contracts";
 import { Navbar } from "@/components/pinely/Navbar";
 import { PageBackground } from "@/components/pinely/PageBackground";
 import { Footer } from "@/components/pinely/Footer";
+import { Stage2Banner } from "@/components/pinely/StageBadge";
 import { DataState } from "@/components/pinely/DataState";
 import { TextScramble } from "@/components/pinely/TextScramble";
 import { useMachinesList, type BackendMachine } from "@/lib/api";
@@ -142,13 +144,16 @@ export default function MapPage() {
             on Robinhood Chain.
           </p>
           <p className="note" role="status" style={{ marginTop: "12px", color: "#ecd8de" }}>
-            Cryptographic spatial dispersal of machines registered onchain. Machine status, spend
-            quota, and fee tiers are live data from the PINELY indexer.
+            Cryptographic spatial dispersal of machines registered onchain.{" "}
+            {list.data
+              ? "Machine status, spend quota, and fee tiers are live data from the PINELY indexer."
+              : "Awaiting indexer. Machine data will appear here once the PINELY indexer is online."}
           </p>
         </section>
 
         {/* Tactical Radar Terminal */}
         <section className="sec page-reveal-1" style={{ paddingTop: "20px" }}>
+          {!findContractAddress(activeChain.id, "PinelyHook") && <Stage2Banner />}
           <div className="radar-terminal">
             {/* Top HUD Telemetry Bar */}
             <div className="radar-hud-bar">
@@ -188,8 +193,6 @@ export default function MapPage() {
                     {activeChain.name} ({activeChain.id})
                   </b>
                 </span>
-                <span style={{ opacity: 0.4 }}>|</span>
-                <span style={{ color: "#ffffff" }}>Block time: {blockTimeLabel}</span>
               </div>
             </div>
 

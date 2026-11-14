@@ -85,6 +85,8 @@ export async function ensureSchemas(): Promise<void> {
     alter table "${APP_SCHEMA}".pilot_applications add column if not exists organization text;
     alter table "${APP_SCHEMA}".pilot_applications add column if not exists hardware_enclave text;
     alter table "${APP_SCHEMA}".pilot_applications add column if not exists notes text;
+    alter table "${APP_SCHEMA}".pilot_applications add column if not exists operator_address text;
+    alter table "${APP_SCHEMA}".pilot_applications add column if not exists safe_address text;
   `);
 }
 

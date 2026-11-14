@@ -34,7 +34,7 @@ import {
 } from "@/lib/api";
 import { formatCount, formatStable, percentOf, shortHex, tierOf } from "@/lib/machine-view";
 import { useWallet } from "@/providers/WalletContext";
-import { stablecoinSymbol, blockTimeLabel } from "@/lib/chain";
+import { stablecoinSymbol } from "@/lib/chain";
 
 /** Parses a stablecoin amount typed as dollars ("12.5") into 6-decimal base units, or null when invalid. */
 function stableUnits(value: string): bigint | null {
@@ -325,6 +325,46 @@ export default function FleetPage() {
           </div>
         </section>
 
+        <section className="sec" style={{ paddingTop: "16px", paddingBottom: 0 }}>
+          <details className="card" style={{ padding: "4px 20px 16px" }}>
+            <summary
+              style={{
+                cursor: "pointer",
+                minHeight: "44px",
+                display: "flex",
+                alignItems: "center",
+                fontWeight: 600,
+              }}
+            >
+              Who can do what: roles and permissions
+            </summary>
+            <ul
+              className="note"
+              style={{ lineHeight: 1.7, paddingLeft: "18px", margin: "8px 0 0" }}
+            >
+              <li>
+                <b>Operator:</b> your wallet. It registers machines, sets spend policies, rotates or
+                revokes session keys, freezes and unfreezes, and configures the sweeper.
+              </li>
+              <li>
+                <b>Guardian:</b> an optional address you choose, for example a Safe. It can freeze a
+                machine or the whole fleet. It cannot unfreeze, change policies, or move funds.
+              </li>
+              <li>
+                <b>Session key:</b> the machine&apos;s signing key. It signs UserOperations for its
+                own machine account only, inside the validity window you set, and you can revoke it.
+                Allowlisting of call targets is off by default, and Stage 1 has no onchain spend
+                cap.
+              </li>
+              <li>
+                <b>Sweeper:</b> you set the destination and the reserve. Anyone can trigger a sweep,
+                but it only moves the balance above the reserve to your destination, never while the
+                machine is frozen, and only after the machine account has approved the sweeper.
+              </li>
+            </ul>
+          </details>
+        </section>
+
         <section className="sec page-reveal-1" style={{ paddingTop: "20px" }}>
           {!wallet.isConnected ? (
             <div className="card" style={{ padding: "32px 28px", textAlign: "center" }}>
@@ -402,10 +442,7 @@ export default function FleetPage() {
                       <span>
                         OPERATOR: <b>{shortHex(operator ?? "", 6, 4)}</b>
                       </span>
-                      <span className="meta-sep">/</span>
-                      <span>
-                        BLOCK TIME: <b>{blockTimeLabel}</b>
-                      </span>
+
                       <span className="meta-sep">/</span>
                       <span>
                         STAGE 1: <b>ACTIVE</b>
@@ -507,7 +544,7 @@ export default function FleetPage() {
                           <line x1="12" y1="9" x2="12" y2="13" />
                           <line x1="12" y1="17" x2="12.01" y2="17" />
                         </svg>
-                        SUB-SECOND CIRCUIT BREAKER
+                        SINGLE-TRANSACTION CIRCUIT BREAKER
                       </span>
                       <span className="font-mono text-xs" style={{ color: "var(--mut-light)" }}>
                         MachineRegistry.sol
@@ -528,11 +565,10 @@ export default function FleetPage() {
                       <div>
                         • AFFECTED SCOPE: <b>{formatCount(totalMachines)} hardware accounts</b>
                       </div>
+
                       <div>
-                        • EXECUTION TIME: <b>{blockTimeLabel} block time</b>
-                      </div>
-                      <div>
-                        • AUTHORIZATION: <b>Signed by Operator or Safe Multisig Guardian</b>
+                        • AUTHORIZATION:{" "}
+                        <b>Freeze: operator or guardian. Unfreeze: operator only.</b>
                       </div>
                     </div>
                   </div>
@@ -946,7 +982,10 @@ export default function FleetPage() {
                     <h3 style={{ margin: "0 0 6px", fontSize: "20px" }}>Surplus Sweeper</h3>
                     <p className="note" style={{ margin: 0, fontSize: "13px" }}>
                       Automated treasury valve: forwards rover balance exceeding reserve to your
-                      Safe vault.
+                      Safe vault. You set the destination and the reserve. Anyone can trigger a
+                      sweep, but it only moves the surplus above the reserve, never while the
+                      machine is frozen, and only after the machine account has approved the
+                      sweeper.
                     </p>
                   </div>
 
@@ -1140,7 +1179,7 @@ export default function FleetPage() {
                       className="font-mono text-xs"
                       style={{ color: "var(--mut)", textTransform: "uppercase" }}
                     >
-                      STEP 2 · Session Key Address (TPM Signer)
+                      STEP 2 · Session Key Address (Machine Signer)
                     </span>
                     <input
                       className="fleet-input font-mono"

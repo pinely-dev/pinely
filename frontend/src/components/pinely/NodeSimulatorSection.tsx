@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { NodeSimulator } from "./NodeSimulator";
-import { stablecoinSymbol, nativeSymbol, blockTimeLabel } from "@/lib/chain";
+import { stablecoinSymbol, nativeSymbol } from "@/lib/chain";
+import { StageBadge } from "@/components/pinely/StageBadge";
 import { robinhoodTestnet, robinhoodMainnet } from "@pinely/shared/chains";
 
 export function NodeSimulatorSection() {
@@ -12,11 +13,14 @@ export function NodeSimulatorSection() {
         <span className="tag">
           <span>LIVE HARDWARE SANDBOX</span>
         </span>
+        <div style={{ marginTop: "10px" }}>
+          <StageBadge variant="stage2" />
+        </div>
         <h2>Simulate an autonomous machine in real time.</h2>
         <p>
-          Every physical AI unit operates under strict onchain spend bounds. Trigger simulated
-          micro-service settlements, observe sponsored gas execution on Robinhood Chain, or fire the
-          emergency 1-Tx Kill Switch.
+          In Stage 2, every physical AI unit will operate under onchain spend bounds. Trigger
+          simulated micro-service settlements, observe sponsored gas execution on Robinhood Chain,
+          or fire the emergency 1-Tx Kill Switch.
         </p>
       </div>
 
@@ -55,16 +59,14 @@ export function NodeSimulatorSection() {
               <div>
                 Settlement Rail<b>{stablecoinSymbol} (6 dec)</b>
               </div>
-              <div>
-                Block Time<b>{blockTimeLabel}</b>
-              </div>
+
               <div>
                 Account Standard<b>ERC-4337 EntryPoint v0.7</b>
               </div>
             </div>
 
             <p className="note" style={{ marginBottom: "16px" }}>
-              Fail-closed spend constraints enforced by PinelyPaymaster.sol & PinelyHook.sol.
+              Spend constraints will be enforced by PinelyHook.sol (Stage 2, not deployed).
             </p>
 
             <Link href="/docs" className="btn red sm">

@@ -37,13 +37,13 @@ const GATES: Gate[] = [
     revertCondition: "Revert: SpendLimitExceeded(requested, availableQuota)",
     description:
       "Daily and per-transaction limits are enforced onchain by the hook once Stage 2 is deployed. Even if physical hardware is compromised or stolen on the street, the attacker cannot drain beyond the configured threshold.",
-    tags: ["Timestamp-based Reset", "Strict Allowance", "Zero Custody Drift"],
+    tags: ["Timestamp-based Reset", "Strict Allowance", "Stage 2 Hook"],
   },
   {
     id: "gate-3",
     gateNumber: "Gate 3",
     title: "Kill Switch",
-    subtitle: "Sub-Second Fleet-Wide Emergency Freeze",
+    subtitle: "Single-Transaction Fleet-Wide Emergency Freeze",
     targetContract: "MachineRegistry.sol + PinelyAccount.sol",
     guardCheck: "isFrozen(machineId) == false && fleetFrozen[operator] == false",
     revertCondition: "Revert: MachineFrozen(machineId)",
@@ -87,7 +87,7 @@ export function ProtocolFirewall() {
       {/* Top Banner / Telemetry Status */}
       <div className="firewall-top">
         <div className="fw-badge">
-          <span>PINELY ONCHAIN FIREWALL · 4 ACTIVE GUARDS</span>
+          <span>PINELY ONCHAIN FIREWALL · 4 GUARDS · STAGE 2</span>
         </div>
         <div className="fw-target font-mono">
           <span>Target: PinelyHook (Uniswap v4)</span>
@@ -114,7 +114,7 @@ export function ProtocolFirewall() {
               >
                 <div className="fw-gate-head">
                   <span className="text-xs tracking-wider text-zinc-400">{gate.gateNumber}</span>
-                  <span className="fw-status-pill">PASS</span>
+                  <span className="fw-status-pill">STAGE 2</span>
                 </div>
                 <h3 className="fw-gate-title">{gate.title}</h3>
                 <p className="fw-gate-sub">{gate.subtitle}</p>

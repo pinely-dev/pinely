@@ -6,7 +6,8 @@ import { NodeSimulator } from "./NodeSimulator";
 import { ProtocolFirewall } from "./ProtocolFirewall";
 import { TextScramble } from "./TextScramble";
 import { ScrollReveal } from "./ScrollReveal";
-import { activeChain, stablecoinSymbol, nativeSymbol, blockTimeLabel } from "@/lib/chain";
+import { activeChain, stablecoinSymbol, nativeSymbol } from "@/lib/chain";
+import { StageBadge } from "@/components/pinely/StageBadge";
 import { robinhoodTestnet, robinhoodMainnet } from "@pinely/shared/chains";
 
 type CockpitTab = "sandbox" | "firewall";
@@ -22,6 +23,9 @@ export function TacticalCommandCockpit() {
             <span className="tag">
               <TextScramble text="TACTICAL FLEET COMMAND" />
             </span>
+            <div style={{ marginTop: "10px" }}>
+              <StageBadge variant="stage2" />
+            </div>
             <h2>Simulate, audit & enforce onchain.</h2>
             <p>
               Observe the complete machine execution loop in real time. Simulate autonomous
@@ -129,17 +133,14 @@ export function TacticalCommandCockpit() {
                       <div>
                         Settlement Currency<b>{stablecoinSymbol} (6 Decimals)</b>
                       </div>
-                      <div>
-                        Block Time<b>{blockTimeLabel}</b>
-                      </div>
+
                       <div>
                         Account Standard<b>ERC-4337 v0.7</b>
                       </div>
                     </div>
 
                     <p className="note" style={{ marginBottom: "16px" }}>
-                      Fail-closed spend constraints enforced by PinelyPaymaster.sol &
-                      PinelyHook.sol.
+                      Spend constraints will be enforced by PinelyHook.sol (Stage 2, not deployed).
                     </p>
 
                     <Link

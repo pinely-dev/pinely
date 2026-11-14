@@ -42,13 +42,17 @@ const SCENARIOS: Scenario[] = [
   {
     colSpan: "bento-span-12",
     tag: "ANTI-THEFT PROTOCOL",
-    timestamp: "FAIL-CLOSED DEFENSE · STAGE 2",
-    title: "The stolen drone that cannot be drained",
+    timestamp: "FAIL-CLOSED DEFENSE · STAGE 2 · NOT DEPLOYED",
+    title: "The stolen drone and the daily limit",
     description:
-      "A rogue actor physically captures an aerial courier drone and extracts memory flash. When attempting to drain the smart account treasury, the transaction reverts onchain because the $50 daily limit is enforced by PinelyHook.sol (Stage 2). The fleet manager fires the 1-Tx Kill Switch, bricking the machine's session key permanently.",
+      "A rogue actor physically captures an aerial courier drone and extracts memory flash. When attempting to drain the smart account treasury, the transaction would revert onchain, because the $50 daily limit would be enforced by PinelyHook.sol (Stage 2, not deployed). The fleet manager fires the 1-Tx Kill Switch, which freezes the machine until the operator unfreezes it.",
     telemetry: [
-      { label: "Exploit Result", value: "Revert: Daily Cap Exceeded ($50.00 Max)", isDanger: true },
-      { label: "Fleet State", value: "Session Key Revoked via 1-Tx Kill Switch" },
+      {
+        label: "Exploit Result (Stage 2)",
+        value: "Revert: Daily Cap Exceeded ($50.00 Max)",
+        isDanger: true,
+      },
+      { label: "Fleet State", value: "Machine Frozen via 1-Tx Kill Switch" },
     ],
     highlight: true,
   },

@@ -1,8 +1,5 @@
-import { resolvePinelyTokenCa } from "@pinely/shared/contracts";
-import { activeChain } from "@/lib/chain";
+import { tokenCa } from "@/lib/token";
 import { shortHex } from "@/lib/machine-view";
-
-const tokenCa = resolvePinelyTokenCa(activeChain.id);
 
 export function Marquee() {
   const words = ["EARN", "PAY", "LIMIT", "FREEZE", "BURN"];

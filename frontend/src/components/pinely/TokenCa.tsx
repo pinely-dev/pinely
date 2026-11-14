@@ -1,16 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { resolvePinelyTokenCa } from "@pinely/shared/contracts";
-import { activeChain } from "@/lib/chain";
-import { shortHex } from "@/lib/machine-view";
+import { tokenCa, tokenExplorerUrl } from "@/lib/token";
 
 /**
- * The official $PINELY contract address, read from the single source of truth
- * (`shared/contracts/external.ts`, key `PINELY`). Until the token launches the key is absent and this
- * says so plainly; it never shows a placeholder address. A malformed address fails the build.
+ * The official $PINELY contract address (see `lib/token.ts`). If no address is configured this says so
+ * plainly; it never shows a placeholder address.
  */
-const tokenCa = resolvePinelyTokenCa(activeChain.id);
 
 interface TokenCaProps {
   /** `hero` is centered under the call to action; `footer` sits in the brand column. */
@@ -32,7 +28,7 @@ export function TokenCa({ variant = "hero" }: TokenCaProps) {
   }
 
   const { address } = tokenCa;
-  const explorer = activeChain.blockExplorers?.default.url;
+  const explorer = tokenExplorerUrl;
 
   const copy = async () => {
     try {
@@ -64,7 +60,7 @@ export function TokenCa({ variant = "hero" }: TokenCaProps) {
         title={address}
         aria-label={label}
       >
-        <span className="token-ca-label">CA</span> {shortHex(address, 6, 4)}
+        <span className="token-ca-label">CA</span> {address}
       </button>
       <button
         type="button"

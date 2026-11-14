@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { findContractAddress } from "@pinely/shared/contracts";
-import { activeChain, stablecoinSymbol, blockTimeLabel } from "@/lib/chain";
+import { activeChain, stablecoinSymbol } from "@/lib/chain";
 import { Navbar } from "@/components/pinely/Navbar";
 import { PageBackground } from "@/components/pinely/PageBackground";
 import { Footer } from "@/components/pinely/Footer";
@@ -58,6 +58,11 @@ export default function MachinesPage() {
   });
 
   const registry = findContractAddress(activeChain.id, "MachineRegistry");
+  const indexerState: "live" | "checking" | "unavailable" = stats.data
+    ? "live"
+    : stats.fetchStatus === "fetching"
+      ? "checking"
+      : "unavailable";
   const machines = list.data?.data ?? [];
   const total = list.data?.meta.total ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -138,7 +143,7 @@ export default function MachinesPage() {
                   Looking to onboard new hardware?
                 </span>
                 <span style={{ fontSize: "12px", color: "var(--mut-light)" }}>
-                  Machine registration and TPM session key provisioning is managed from the Operator
+                  Machine registration and session key provisioning is managed from the Operator
                   Command Desk.
                 </span>
               </div>
@@ -205,9 +210,15 @@ export default function MachinesPage() {
           {/* Registry telemetry strip */}
           <div className="registry-telemetry-banner font-mono">
             <div className="telemetry-banner-left">
-              <span className={`status-pill ${registry ? "active" : "standby"}`}>
-                <span className={`pulse-beacon ${registry ? "green" : "red"}`} />
-                <span>{registry ? "ONLINE · DEPLOYED" : "STANDBY · NOT DEPLOYED"}</span>
+              <span className={`status-pill ${indexerState === "live" ? "active" : "standby"}`}>
+                <span className={`pulse-beacon ${indexerState === "live" ? "green" : "red"}`} />
+                <span>
+                  {indexerState === "live"
+                    ? "ONLINE · DEPLOYED"
+                    : indexerState === "checking"
+                      ? "CHECKING INDEXER…"
+                      : "INDEXER NOT DEPLOYED YET"}
+                </span>
               </span>
               <div className="telemetry-contract-info">
                 <span className="telemetry-label">REGISTRY CONTRACT:</span>
@@ -236,10 +247,6 @@ export default function MachinesPage() {
             </div>
 
             <div className="telemetry-banner-right">
-              <span className="telemetry-chip">
-                <span className="telemetry-chip-dot" />
-                <span>Block time {blockTimeLabel}</span>
-              </span>
               <span className="telemetry-chip network">
                 <span>
                   {activeChain.name} ({activeChain.id})
@@ -316,7 +323,9 @@ export default function MachinesPage() {
             emptyMessage={
               debouncedSearch || status !== "all"
                 ? "No registered machines match this filter."
-                : "No machines are registered yet."
+                : indexerState === "live"
+                  ? "No machines are registered yet."
+                  : `No machines indexed yet. The PINELY indexer for ${activeChain.name} is being deployed.${registry ? " Contracts are live: see /contracts." : ""}`
             }
             onRetry={() => list.refetch()}
           >
