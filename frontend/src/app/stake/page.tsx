@@ -10,6 +10,7 @@ import { StakePanel } from "@/components/pinely/StakePanel";
 import { TextScramble } from "@/components/pinely/TextScramble";
 import { Footer } from "@/components/pinely/Footer";
 import { Stage2Banner } from "@/components/pinely/StageBadge";
+import { activeStage2State } from "@/lib/stage2";
 import { shortHex } from "@/lib/machine-view";
 
 const FLEET_PRESETS = [5, 10, 25, 50, 100];
@@ -21,6 +22,8 @@ export default function StakePage() {
   // PinelyStake.MIN_STAKE_GOLD: one threshold per operator, whatever the fleet size.
   const totalRequiredStake = 10_000;
   const stakeContract = findContractAddress(activeChain.id, "PinelyStake");
+  const stage2State = activeStage2State();
+  const stakeOnline = Boolean(stakeContract) && stage2State === "active";
 
   const totalMonthlyVolume = fleetSize * monthlyVolumePerNode;
   const bronzeMonthlyFee = totalMonthlyVolume * 0.003; // 0.30%
@@ -54,10 +57,16 @@ export default function StakePage() {
         {/* Staking Command Telemetry Banner */}
         <div className="staking-telemetry-banner font-mono page-reveal-1">
           <div className="telemetry-banner-left">
-            <span className={`status-pill ${stakeContract ? "active" : "standby"}`}>
-              <span className={`pulse-beacon ${stakeContract ? "green" : "red"}`} />
+            <span className={`status-pill ${stakeOnline ? "active" : "standby"}`}>
+              <span className={`pulse-beacon ${stakeOnline ? "green" : "red"}`} />
               <span>
-                {stakeContract ? "ONLINE · DEPLOYED (STAGE 2)" : "STANDBY · STAGE 2 REHEARSAL"}
+                {stakeOnline
+                  ? "ONLINE · DEPLOYED (STAGE 2)"
+                  : stakeContract
+                    ? stage2State === "connected"
+                      ? "CONNECTED · NO POOL YET (STAGE 2)"
+                      : "DEPLOYED · NOT ACTIVE YET (STAGE 2)"
+                    : "STANDBY · STAGE 2 REHEARSAL"}
               </span>
             </span>
             <div className="telemetry-contract-info">
@@ -124,7 +133,7 @@ export default function StakePage() {
         </div>
 
         <section className="sec" style={{ paddingTop: "12px" }}>
-          {!stakeContract && <Stage2Banner />}
+          <Stage2Banner />
           {/* Reputation Tier Cards */}
           <div className="stake-tier-grid">
             {/* Bronze Tier */}
@@ -526,7 +535,7 @@ export default function StakePage() {
           >
             <p className="note">
               {stakeContract
-                ? `STAGE 2 REHEARSAL · PinelyStake ${shortHex(stakeContract)}`
+                ? `STAGE 2 · PinelyStake ${shortHex(stakeContract)} is deployed. This site offers no staking action yet.`
                 : "STAGE 2 · PinelyStake is not deployed yet. It is covered by the Foundry test suite."}
             </p>
             <div style={{ display: "flex", gap: "12px" }}>

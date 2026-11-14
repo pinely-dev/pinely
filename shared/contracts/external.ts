@@ -49,7 +49,8 @@ export const externalAddresses: Record<string, Record<string, Address>> = {
     //
     // PINELY ($PINELY token CA), shown in the hero, footer and marquee. Read from chain on 2026-11-14:
     // name "PINELY PROTOCOL", symbol PINELY, 18 decimals, total supply 1,000,000,000; bytecode present.
-    // Provenance of the address (launch transaction) is the owner's to confirm. If the key is absent,
+    // Provenance: created in launch transaction 0x7e85…d60c (block 113,603,745, 2026-11-13) by 0xc7dC…1Ba7, which the
+    // owner confirmed on 2026-11-14 is a team wallet (docs/runbooks/evidence/token-pinely-onchain-2026-11-14.md). If the key is absent,
     // every page shows "CA: TBA". To change it, take the address from the launch transaction (never
     // from a chat message), in exact EIP-55 checksum form, then commit and redeploy:
     PINELY: "0x415fA0f3480e7c1115EF052F9a7238827DC288cF",

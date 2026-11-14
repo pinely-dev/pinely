@@ -27,7 +27,7 @@
 > **Current Onchain Status (Stage 1 deployed on Mainnet, guarded pre-Beta):**  
 > Core identity, account abstraction, paymaster gas sponsorship, and surplus sweeper contracts are deployed on **Robinhood Chain Mainnet (Chain ID `4663`, blocks `113448196` – `113448242`)**: `MachineRegistry`, `PinelyAccountFactory`, `PinelyPaymaster`, and `SurplusSweeper`, owned by a Safe multisig (2-of-3). The same Stage 1 set was rehearsed on **Robinhood Chain Testnet (Chain ID `46630`)** with a `MockUSDG`.  
 > The `$PINELY` token exists on mainnet at `0x415fA0f3480e7c1115EF052F9a7238827DC288cF`, but the protocol does not use it yet: burning and staking are not active.  
-> Stage 2 contracts (the private Uniswap v4 pool, `PinelyHook`, `PinelyRouter`, `BurnVault`, `PinelyStake`, and `FleetSubscription`) are implemented and covered by 231 automated Foundry tests (7 of them run the hook, router and pool seeder against the real Uniswap v4 PoolManager on a fork of Robinhood Chain mainnet), but stay off mainnet until an external audit is done.  
+> Stage 2 contracts (`BurnVault`, `PinelyBuybackExecutor`, `CreatorFeeSplitter`, `PinelyStake`, `FleetSubscription`, `PinelyHook`, `PinelyRouter`, `PoolSeeder`) are **deployed on mainnet (2026-11-14, blocks `114059645` – `114059704`) and connected to `MachineRegistry` by the PINELY Safe on the same day (block `114078911`), but there is no pool yet**: no machine pool and no buyback pool exist, so `PinelyHook` enforces nothing and nothing is burned or staked through this site. They are unaudited (an internal self-review is in `docs/qa/stage2-self-audit-2026-11-14.md`, and it does not replace an external audit). Addresses are in section 4.  
 > **Not done yet:** no external audit, no UserOperation has been processed on mainnet, and the Paymaster ETH/USD price is set manually by the Safe.  
 > The Next.js 15 App Router web application is live at `https://www.pinelyprotocol.tech`, with full TypeScript, Python, and ROS2 client SDKs active in the monorepo.
 
@@ -133,10 +133,11 @@
 | **Fleet Pro Cockpit** | Operator SIWE authentication, policy controls, telemetry | Web Portal | ✅ **Active** |
 | **Machine Passport** | Public verifiable machine identity and transaction history | Web Portal | ✅ **Active** |
 | **Client SDKs** | TypeScript (@pinely-protocol/sdk), Python (pinely_sdk), ROS2 node | Monorepo | 🟠 **Beta** (npm `0.1.0-beta.1`) |
-| **Private v4 Hook** | Machine Gate, Spend Policy, kill switch, dynamic fees | Stage 2 | 🧪 **Foundry Tested** |
-| **PinelyRouter** | Stateless caller verification and hookData forwarder | Stage 2 | 🧪 **Foundry Tested** |
-| **BurnVault** | Protocol fee buyback and burn emitting `Burned(uint256)` | Stage 2 | 🧪 **Foundry Tested** |
-| **PinelyStake** | Reputational staking vault for Gold Tier with 7-day cooldown | Stage 2 | 🧪 **Foundry Tested** |
+| **Private v4 Hook** | Machine Gate, Spend Policy, kill switch, dynamic fees | Stage 2 · Mainnet (4663) | 🟠 **Deployed and connected, no pool yet** (unaudited) |
+| **PinelyRouter** | Stateless caller verification and hookData forwarder | Stage 2 · Mainnet (4663) | 🟠 **Deployed and connected, no pool yet** (unaudited) |
+| **BurnVault** | Protocol fee buyback and burn emitting `Burned(uint256)` | Stage 2 · Mainnet (4663) | 🟠 **Deployed and connected, no pool yet** (unaudited) |
+| **PinelyStake** | Reputational staking vault for Gold Tier with 7-day cooldown | Stage 2 · Mainnet (4663) | 🟠 **Deployed and connected, no pool yet** (unaudited) |
+| **PinelyBuybackExecutor** | The only swap path of the BurnVault: one fixed Uniswap v4 pool, output sent to the vault | Stage 2 · Mainnet (4663) | 🟠 **Deployed and connected, no pool yet** (unaudited) |
 | **Stage 1 Contracts** | Registry, account factory, Paymaster, sweeper | Mainnet (4663) | ✅ **Deployed** (unaudited) |
 | **Safe Multisig** | 2-of-3 threshold multisig owns the Registry and the Paymaster | Mainnet (4663) | ✅ **Live Onchain** |
 | **$PINELY Token** | ERC-20 on mainnet, not yet used by protocol contracts | Mainnet (4663) | ✅ **Exists** · burn and stake 🛑 Stage 2 |
@@ -190,6 +191,27 @@ Contract configurations and ABIs are synchronized automatically from Foundry bro
 
 The `$PINELY` token was read from the chain on 2026-11-14: name `PINELY PROTOCOL`, symbol `PINELY`, 18 decimals, total supply 1,000,000,000. A bytecode scan found `transfer`, `approve`, `burn` and `burnFrom` and no owner, mint, pause, blacklist or proxy functions. That is not an audit.
 
+
+### Robinhood Chain Mainnet — Stage 2 (Deployed and connected, no pool yet)
+
+- **Deployed:** 2026-11-14, blocks `114059645` – `114059704`, from the Stage 1 deployer (`0x911Bf0fd05A53eC2d06952Ee2Fca8b17CBeA3Bad`), in one broadcast of 12 transactions (cost 0.000176 ETH). The record is in `contracts/broadcast/DeployStage2.s.sol/4663/run-latest.json`.
+- **State:** the PINELY Safe connected the contracts to `MachineRegistry` in one transaction on 2026-11-14 ([`0x88395674…`](https://robinhoodchain.blockscout.com/tx/0x883956741961ead404dcc1a36dd64606659af06c287f7c56ae63add92d48f2b9), block `114078911`: `setHook`, `setStakeContract`, `setRegistrationConfig`, `setAuthorizedLp`). New machine registrations now send 20% of the fee to `BurnVault`. **No machine pool and no buyback pool exist yet**, so nothing is swapped, enforced or burned.
+- **Buyback route:** `BurnVault` proposed `PinelyBuybackExecutor.buyback` as its only route. It becomes usable at 2026-11-16 09:26:50 UTC (a two-day public delay). The Safe is expected to call `BurnVault.lockRoutes()` (irreversible) after one successful small buyback.
+- **Buyback pool:** the executor is bound for good to one plain (no hook) $PINELY/USDG pool with fee `3000` (0.30%) and tick spacing `60`. That pool has **not been created or funded yet**.
+- **Not confirmed:** explorer source verification, an external audit, and any use of these contracts.
+
+| Contract | Address | Deploy Transaction | Block | Owner | Explorer |
+| :--- | :--- | :--- | :---: | :--- | :--- |
+| **BurnVault** | `0x74a5C21f5677666f7E592E8348afAb953546a4F8` | `0xc62856a73422a64c8e5eb9f2feeb474e305b41f76006c206f234f2073f6dfdf9` | 114059645 | Safe 2-of-3 | [View](https://robinhoodchain.blockscout.com/address/0x74a5C21f5677666f7E592E8348afAb953546a4F8) |
+| **CreatorFeeSplitter** | `0x883160436c7033fB846Ac5B45f0FDDF9bb95cdE0` | `0x3b85cea37f3119d49b4cb27916923bf4ad311098fea2443902b83f871ca1de9a` | 114059651 | none | [View](https://robinhoodchain.blockscout.com/address/0x883160436c7033fB846Ac5B45f0FDDF9bb95cdE0) |
+| **PinelyStake** | `0xe452116e51df4dF12f4F01675A0549B3e247752e` | `0xf1f08c97429542ecfe94714ba274b3324c83fc89367905d451e9fcb97ddad36b` | 114059655 | Safe 2-of-3 | [View](https://robinhoodchain.blockscout.com/address/0xe452116e51df4dF12f4F01675A0549B3e247752e) |
+| **FleetSubscription** | `0x782cB14F65e6022D9528a65Ca6384c4fc2715882` | `0x613799aebd2b1fe4e3826f76810e32eadcbb8b20dc933ac6d59902ac00c775f4` | 114059661 | none | [View](https://robinhoodchain.blockscout.com/address/0x782cB14F65e6022D9528a65Ca6384c4fc2715882) |
+| **PinelyBuybackExecutor** | `0x4438Adc610b2B92784CF45C05c3aAb16eE740D05` | `0x7758494fbfc18041720f5774039ecb623b2b8bafb635d42dac9d23a09d79b157` | 114059667 | none | [View](https://robinhoodchain.blockscout.com/address/0x4438Adc610b2B92784CF45C05c3aAb16eE740D05) |
+| **PinelyHook** | `0xC7a0FCaC5bbdaeecbc8dAaCAEb295f5670998ac0` | `0x58d58086c83a68402c6ac522b0807fb9659cb0e3339dfd1221b2e43672df3df5` | 114059678 | none | [View](https://robinhoodchain.blockscout.com/address/0xC7a0FCaC5bbdaeecbc8dAaCAEb295f5670998ac0) |
+| **PinelyRouter** | `0xAA9b7F99c5b57197aa96096aF76332A265eC0357` | `0x35e48b7356d9b5d9945fe27c484615b75a967b74b867e615471c1dc2402fb571` | 114059686 | none | [View](https://robinhoodchain.blockscout.com/address/0xAA9b7F99c5b57197aa96096aF76332A265eC0357) |
+| **PoolSeeder** | `0x392E338bdB5756a76066c9C11a87D7E878E83F47` | `0x32ea9822ad2a6c064dc6f099d08c267f364a6df119b442d8cb6c406a716eeec3` | 114059691 | Safe 2-of-3 | [View](https://robinhoodchain.blockscout.com/address/0x392E338bdB5756a76066c9C11a87D7E878E83F47) |
+
+Stage 2 deployment steps, the pre-deploy gates and the verification commands are in `docs/runbooks/09-stage2-mainnet-predeploy.md` and `docs/runbooks/10-stage2-mainnet-execution.md`; the on-chain evidence is in `docs/runbooks/evidence/mainnet-stage2-robinhood-2026-11-14.md`.
 ---
 
 ## 5. Hardware Integration & Client SDKs
@@ -279,7 +301,7 @@ ros2 run pinely_ros2 pinely_node --ros-args \
 │   ├── src/            # MachineRegistry, PinelyPaymaster, PinelyAccountFactory, SurplusSweeper
 │   │   ├── mocks/      # MockUSDG (testnet settlement stablecoin)
 │   │   └── interfaces/ # ERC-4337 v0.7, Uniswap v4, Registry, and Sweeper interfaces
-│   ├── test/           # 223 unit, fuzz, invariant, and Robinhood RPC fork tests
+│   ├── test/           # 275 unit, fuzz, and invariant tests, plus mainnet-fork tests
 │   └── script/         # Testnet & mainnet deployment runbooks (DeployStage1.s.sol)
 ├── frontend/           # Next.js 15 App Router (React 19, TypeScript, Tailwind CSS v4)
 │   └── src/
@@ -361,7 +383,7 @@ Every commit and pull request must strictly pass all quality gates:
 ### Smart Contract Test Suite (Foundry)
 
 ```bash
-# Run all 223 unit, fuzz, invariant, and live RPC fork tests
+# Run all 275 unit, fuzz, and invariant tests (fork tests run only when RPC_URL_ROBINHOOD_MAINNET is set)
 bun run contracts:test
 
 # Verify Solidity formatting
@@ -374,14 +396,14 @@ bun run contracts:build
 ### Backend Integration Tests
 
 ```bash
-# Run 154 API, SIWE authentication, and HTTP 402 Facilitator integration tests
+# Run 183 API, SIWE authentication, and HTTP 402 Facilitator integration tests
 bun run test:backend
 ```
 
 ### Client SDK Test Suites
 
 ```bash
-# Run 54 TypeScript SDK unit & cryptographic verification tests
+# Run 60 TypeScript SDK unit & cryptographic verification tests
 bun run test:sdk
 
 # Run 36 Python SDK and ROS2 node integration tests

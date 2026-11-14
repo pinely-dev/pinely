@@ -6,7 +6,7 @@ import { Navbar } from "@/components/pinely/Navbar";
 import { PageBackground } from "@/components/pinely/PageBackground";
 import { Footer } from "@/components/pinely/Footer";
 import { TextScramble } from "@/components/pinely/TextScramble";
-import { StageBadge } from "@/components/pinely/StageBadge";
+import { StageBadge, Stage2ContractBadge } from "@/components/pinely/StageBadge";
 import { isPublicChainId, robinhoodTestnet, robinhoodMainnet } from "@pinely/shared/chains";
 import { activeChain as buildChain, nativeSymbol, stablecoinSymbol } from "@/lib/chain";
 import { findContractAddress } from "@pinely/shared/contracts";
@@ -347,7 +347,7 @@ ros2 service call /pinely/pay_service pinely_ros2/srv/PayService \\
 
           <div className="card hl">
             <span className="text-xs text-crimson-400">Step 4</span>
-            <h3 style={{ marginTop: "6px" }}>PinelyHook (Uniswap v4, Stage 2: not deployed)</h3>
+            <h3 style={{ marginTop: "6px" }}>PinelyHook (Uniswap v4, Stage 2: deployed, not in use yet)</h3>
             <p style={{ fontSize: "14px", lineHeight: 1.5, color: "#f0dde2" }}>
               Planned: the hook will evaluate 4 immutable guards (Machine Gate, Spend Policy, Kill Switch, and Tier Fee Cooling), and any violation will revert onchain, fail-closed. It is not deployed, so Stage 1 has no onchain spend cap.
             </p>
@@ -439,7 +439,7 @@ ros2 service call /pinely/pay_service pinely_ros2/srv/PayService \\
               reused nonce is rejected.
             </li>
             <li>
-              <b>Spend limits:</b> Stage 2, not deployed. The PinelyHook Spend Policy is meant to enforce the daily limit onchain, not the Facilitator. Stage 1 has no onchain spend cap today.
+              <b>Spend limits:</b> Stage 2, deployed but not in use yet. The PinelyHook Spend Policy is meant to enforce the daily limit onchain, not the Facilitator. Stage 1 has no onchain spend cap today.
             </li>
           </ul>
         </div>
@@ -551,7 +551,11 @@ ros2 service call /pinely/pay_service pinely_ros2/srv/PayService \\
                     <td>
                       {isDeployed && address ? (
                         <div style={{ display: "grid", gap: "6px", justifyItems: "start" }}>
-                          <StageBadge variant={activeNetwork === "mainnet" ? "live" : "testnet"} />
+                          c.stage === "Stage 2" && activeNetwork === "mainnet" ? (
+                            <Stage2ContractBadge />
+                          ) : (
+                            <StageBadge variant={activeNetwork === "mainnet" ? "live" : "testnet"} />
+                          )
                           <code style={{ fontSize: "12px", color: "#ffffff" }} title={address}>
                             {`${address.substring(0, 10)}...${address.substring(address.length - 8)}`}
                           </code>

@@ -300,6 +300,55 @@ contract DeployGuardsTest is Test {
         h.loadStage2Config(_cfg(realUsdc, goodSafe));
     }
 
+    // --- Buyback pool parameters (C-30): the executor is bound to one pool for good ---
+
+    function _stage2Env() internal {
+        h.setAddr("POOL_MANAGER", address(new NotASafe())); // any contract with bytecode
+        h.setAddr("PINELY_TOKEN_ADDRESS", address(new Token18()));
+    }
+
+    function test_Stage2Mainnet_RevertIf_BuybackPoolNotExplicit() public {
+        _stage2Env();
+        vm.expectRevert(bytes("Mainnet guard: set BUYBACK_POOL_FEE and BUYBACK_POOL_TICK_SPACING"));
+        h.loadStage2Config(_cfg(realUsdc, goodSafe));
+
+        // One of the two is not enough.
+        h.setUint("BUYBACK_POOL_FEE", 3000);
+        vm.expectRevert(bytes("Mainnet guard: set BUYBACK_POOL_FEE and BUYBACK_POOL_TICK_SPACING"));
+        h.loadStage2Config(_cfg(realUsdc, goodSafe));
+    }
+
+    function test_Stage2Mainnet_AcceptsExplicitBuybackPool() public {
+        _stage2Env();
+        h.setUint("BUYBACK_POOL_FEE", 500);
+        h.setUint("BUYBACK_POOL_TICK_SPACING", 10);
+        DeployBase.Stage2Config memory s2 = h.loadStage2Config(_cfg(realUsdc, goodSafe));
+        assertEq(s2.buybackPoolFee, 500);
+        assertEq(s2.buybackTickSpacing, 10);
+    }
+
+    function test_Stage2Testnet_BuybackPoolDefaults() public {
+        vm.chainId(46630);
+        _stage2Env();
+        DeployBase.Stage2Config memory s2 = h.loadStage2Config(_cfg(realUsdc, goodSafe));
+        assertEq(s2.buybackPoolFee, 3000);
+        assertEq(s2.buybackTickSpacing, 60);
+    }
+
+    function test_Stage2_RevertIf_BuybackPoolOutOfRange() public {
+        _stage2Env();
+        h.setUint("BUYBACK_POOL_TICK_SPACING", 10);
+
+        h.setUint("BUYBACK_POOL_FEE", 1_000_001);
+        vm.expectRevert(bytes("Config: invalid buyback pool fee or tick spacing"));
+        h.loadStage2Config(_cfg(realUsdc, goodSafe));
+
+        h.setUint("BUYBACK_POOL_FEE", 3000);
+        h.setUint("BUYBACK_POOL_TICK_SPACING", 32_768);
+        vm.expectRevert(bytes("Config: invalid buyback pool fee or tick spacing"));
+        h.loadStage2Config(_cfg(realUsdc, goodSafe));
+    }
+
     // --- Paymaster price bounds (D4) ---
 
     function test_PriceBounds_Accepts_AFourfoldWindow() public view {

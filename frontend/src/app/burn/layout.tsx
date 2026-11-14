@@ -4,7 +4,7 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata = pageMetadata({
   title: "BurnVault",
   description:
-    "Where BurnVault income is planned to come from. BurnVault is a Stage 2 contract and is not deployed, so no $PINELY has been burned.",
+    "Where BurnVault income is planned to come from. BurnVault is a Stage 2 contract that is deployed but not in use yet, so no $PINELY has been burned through it.",
   path: "/burn",
 });
 

@@ -33,6 +33,48 @@ contract PinelyStakeTest is Test {
         assertTrue(stakeContract.hasMinStakeGold(operator));
     }
 
+    function test_Constructor_RejectsAWrongTokenAndZeroAddresses() public {
+        // $PINELY must have 18 decimals: the Gold threshold is written in 18-decimal units.
+        MockERC20 sixDecimals = new MockERC20("Six", "SIX", 6);
+        vm.expectRevert(IPinelyStake.InvalidToken.selector);
+        new PinelyStake(address(sixDecimals), burnVault, slashingAuthority, owner);
+
+        vm.expectRevert(IPinelyStake.ZeroAddress.selector);
+        new PinelyStake(address(0), burnVault, slashingAuthority, owner);
+        vm.expectRevert(IPinelyStake.ZeroAddress.selector);
+        new PinelyStake(address(pinelyToken), address(0), slashingAuthority, owner);
+        vm.expectRevert(IPinelyStake.ZeroAddress.selector);
+        new PinelyStake(address(pinelyToken), burnVault, address(0), owner);
+    }
+
+    function test_SetSlashingAuthority_OnlyOwnerAndTakesEffect() public {
+        address newAuthority = address(0x7777);
+
+        vm.prank(stranger);
+        vm.expectRevert();
+        stakeContract.setSlashingAuthority(newAuthority);
+
+        vm.prank(owner);
+        vm.expectRevert(IPinelyStake.ZeroAddress.selector);
+        stakeContract.setSlashingAuthority(address(0));
+
+        vm.prank(operator);
+        stakeContract.stake(10_000e18);
+
+        vm.prank(owner);
+        stakeContract.setSlashingAuthority(newAuthority);
+
+        // The old authority loses the power to slash, the new one gains it.
+        vm.prank(slashingAuthority);
+        vm.expectRevert(IPinelyStake.NotSlashingAuthority.selector);
+        stakeContract.slash(operator, 1e18, bytes32("evidence"));
+
+        vm.prank(newAuthority);
+        stakeContract.slash(operator, 1e18, bytes32("evidence"));
+        assertEq(stakeContract.stakeOf(operator), 10_000e18 - 1e18);
+        assertEq(pinelyToken.balanceOf(burnVault), 1e18, "slashed tokens go straight to the BurnVault");
+    }
+
     function test_Stake_RevertIf_ZeroAmount() public {
         vm.prank(operator);
         vm.expectRevert(IPinelyStake.ZeroAmount.selector);

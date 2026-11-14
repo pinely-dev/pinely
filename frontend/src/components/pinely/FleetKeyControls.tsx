@@ -411,8 +411,8 @@ export function FleetKeyControls({
           <h3 style={{ margin: "0 0 6px", fontSize: "20px" }}>Asset Allowlist</h3>
           <p className="note" style={{ margin: 0, fontSize: "13px" }}>
             Lists the ERC-20 tokens a machine is approved to swap. The registry stores the list and
-            PinelyHook (Stage 2, not deployed) enforces it, so nothing is enforced until Stage 2 is
-            deployed.
+            PinelyHook (Stage 2, deployed but not in use yet) enforces it, so nothing is enforced
+            until Stage 2 is in use.
           </p>
         </div>
 

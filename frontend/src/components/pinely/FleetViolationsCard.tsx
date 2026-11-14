@@ -69,7 +69,7 @@ export function FleetViolationsCard({ operator }: { operator: string }) {
             <div className="sentinel-shield-headline font-mono">NO VIOLATIONS RECORDED</div>
             <p className="sentinel-shield-body">
               The PINELY indexer has recorded no policy violations for this fleet. Spend limits are
-              enforced by PinelyHook, which is a Stage 2 contract and is not deployed.
+              enforced by PinelyHook, which is a Stage 2 contract and is not in use yet.
             </p>
 
             {/* 4-Point Security Telemetry Grid (2x2 Matrix) */}
@@ -83,7 +83,7 @@ export function FleetViolationsCard({ operator }: { operator: string }) {
               <div className="sentinel-matrix-cell">
                 <span className="sentinel-matrix-label font-mono">SPEND LIMIT</span>
                 <span className="sentinel-matrix-val font-mono" style={{ color: "var(--bl)" }}>
-                  Stage 2 · not deployed
+                  Stage 2 · not in use yet
                 </span>
               </div>
               <div className="sentinel-matrix-cell">

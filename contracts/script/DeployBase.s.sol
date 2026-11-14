@@ -19,6 +19,7 @@ import {FleetSubscription} from "../src/FleetSubscription.sol";
 import {PinelyHook} from "../src/PinelyHook.sol";
 import {PinelyRouter} from "../src/PinelyRouter.sol";
 import {PoolSeeder} from "../src/PoolSeeder.sol";
+import {PinelyBuybackExecutor} from "../src/PinelyBuybackExecutor.sol";
 import {MockUSDG} from "../src/mocks/MockUSDG.sol";
 import {MockPinelyToken} from "../src/mocks/MockPinelyToken.sol";
 
@@ -80,10 +81,15 @@ abstract contract DeployBase is Script {
         address poolManager;
         address pinelyToken;
         address slashingAuthority;
+        // Fee (in 1e6) and tick spacing of the plain $PINELY/stablecoin pool the buyback executor is bound to.
+        // They must match the pool that PoolSeeder initialises, because the executor can never change them.
+        uint256 buybackPoolFee;
+        uint256 buybackTickSpacing;
     }
 
     struct Stage2 {
         BurnVault burnVault;
+        PinelyBuybackExecutor buybackExecutor;
         CreatorFeeSplitter feeSplitter;
         PinelyStake stake;
         FleetSubscription subscription;
@@ -247,6 +253,24 @@ abstract contract DeployBase is Script {
             require(IERC20Metadata(s2.pinelyToken).decimals() == 18, "Guard: $PINELY must have 18 decimals");
             if (_isMainnet()) require(!_isMock(s2.pinelyToken), "Mainnet guard: mock $PINELY rejected");
         }
+
+        // The buyback executor is bound to one plain pool for good, so on mainnet its parameters must be explicit
+        // and must match the pool PoolSeeder initialises. Off mainnet they default to a 0.30% / 60 pool.
+        s2.buybackPoolFee = _envUint("BUYBACK_POOL_FEE", 0);
+        s2.buybackTickSpacing = _envUint("BUYBACK_POOL_TICK_SPACING", 0);
+        if (_isMainnet()) {
+            require(
+                s2.buybackPoolFee != 0 && s2.buybackTickSpacing != 0,
+                "Mainnet guard: set BUYBACK_POOL_FEE and BUYBACK_POOL_TICK_SPACING"
+            );
+        } else {
+            if (s2.buybackPoolFee == 0) s2.buybackPoolFee = 3000;
+            if (s2.buybackTickSpacing == 0) s2.buybackTickSpacing = 60;
+        }
+        require(
+            s2.buybackPoolFee <= 1_000_000 && s2.buybackTickSpacing <= uint256(uint16(type(int16).max)),
+            "Config: invalid buyback pool fee or tick spacing"
+        );
     }
 
     // ---------------------------------------------------------------------
@@ -304,6 +328,19 @@ abstract contract DeployBase is Script {
         ext.stake = new PinelyStake(s2.pinelyToken, address(ext.burnVault), s2.slashingAuthority, cfg.deployer);
         ext.subscription = new FleetSubscription(cfg.stablecoin, address(ext.burnVault), cfg.treasury);
 
+        // The only swap path the vault will ever use (audit finding C-30). The deployer still owns the vault here,
+        // so it proposes the single allowlisted route now and the public two-day delay starts running immediately.
+        // This runs before the router address is predicted below, because it consumes deployer nonces.
+        ext.buybackExecutor = new PinelyBuybackExecutor(
+            s2.poolManager,
+            address(ext.burnVault),
+            s2.pinelyToken,
+            cfg.stablecoin,
+            uint24(s2.buybackPoolFee),
+            int24(uint24(s2.buybackTickSpacing))
+        );
+        ext.burnVault.proposeRoute(address(ext.buybackExecutor), PinelyBuybackExecutor.buyback.selector);
+
         // The router address is predicted from the deployer nonce: the hook is deployed first through the
         // CREATE2 deployer (one deployer transaction), then the router.
         address routerAddress = vm.computeCreateAddress(cfg.deployer, vm.getNonce(cfg.deployer) + 1);
@@ -335,6 +372,13 @@ abstract contract DeployBase is Script {
         ext.poolSeeder = new PoolSeeder(s2.poolManager, cfg.deployer);
 
         console.log("BurnVault:", address(ext.burnVault));
+        console.log("PinelyBuybackExecutor:", address(ext.buybackExecutor));
+        console.log("Buyback pool fee and tick spacing (PoolSeeder must initialise exactly this pool):");
+        console.log(s2.buybackPoolFee, s2.buybackTickSpacing);
+        console.log("BurnVault buyback route proposed; usable only after ROUTE_DELAY (2 days).");
+        console.log(
+            "After one small buyback has succeeded, the Safe should call BurnVault.lockRoutes() (irreversible)."
+        );
         console.log("CreatorFeeSplitter:", address(ext.feeSplitter));
         console.log("PinelyStake:", address(ext.stake));
         console.log("FleetSubscription:", address(ext.subscription));
@@ -355,6 +399,17 @@ abstract contract DeployBase is Script {
             console.log("  registry.setHook:", address(ext.hook));
             console.log("  registry.setStakeContract:", address(ext.stake));
             console.log("  registry.setRegistrationConfig burnVault:", address(ext.burnVault));
+        }
+
+        // The hook only lets the treasury, the router and authorised LPs add liquidity, and PoolSeeder is the
+        // caller the PoolManager sees. Without this authorisation, seeding the hooked machine pool reverts
+        // (the buyback pool has no hook and needs nothing). Only the treasury may grant it.
+        if (cfg.treasury == cfg.deployer) {
+            ext.hook.setAuthorizedLp(address(ext.poolSeeder), true);
+            console.log("PoolSeeder authorised as an LP of the hook");
+        } else {
+            console.log("Execute from the treasury Safe before seeding the hooked pool:");
+            console.log("  hook.setAuthorizedLp(poolSeeder, true):", address(ext.poolSeeder));
         }
     }
 

@@ -18,6 +18,19 @@ export const burnVaultAbi = [
   },
   {
     type: "function",
+    name: "BUYBACK_WINDOW",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "uint64",
+        internalType: "uint64",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "DEAD_ADDRESS",
     inputs: [],
     outputs: [
@@ -25,6 +38,32 @@ export const burnVaultAbi = [
         name: "",
         type: "address",
         internalType: "address",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "MAX_BUYBACK_BPS_PER_DAY",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "ROUTE_DELAY",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "uint64",
+        internalType: "uint64",
       },
     ],
     stateMutability: "view",
@@ -90,6 +129,37 @@ export const burnVaultAbi = [
   },
   {
     type: "function",
+    name: "isRouteActive",
+    inputs: [
+      {
+        name: "router",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "selector",
+        type: "bytes4",
+        internalType: "bytes4",
+      },
+    ],
+    outputs: [
+      {
+        name: "",
+        type: "bool",
+        internalType: "bool",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "lockRoutes",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
     name: "owner",
     inputs: [],
     outputs: [
@@ -116,10 +186,83 @@ export const burnVaultAbi = [
   },
   {
     type: "function",
+    name: "proposeRoute",
+    inputs: [
+      {
+        name: "router",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "selector",
+        type: "bytes4",
+        internalType: "bytes4",
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
     name: "renounceOwnership",
     inputs: [],
     outputs: [],
     stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "revokeRoute",
+    inputs: [
+      {
+        name: "router",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "selector",
+        type: "bytes4",
+        internalType: "bytes4",
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "routeActiveAt",
+    inputs: [
+      {
+        name: "router",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "selector",
+        type: "bytes4",
+        internalType: "bytes4",
+      },
+    ],
+    outputs: [
+      {
+        name: "",
+        type: "uint64",
+        internalType: "uint64",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "routesLocked",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "bool",
+        internalType: "bool",
+      },
+    ],
+    stateMutability: "view",
   },
   {
     type: "function",
@@ -180,6 +323,56 @@ export const burnVaultAbi = [
     anonymous: false,
   },
   {
+    type: "event",
+    name: "RouteProposed",
+    inputs: [
+      {
+        name: "router",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+      {
+        name: "selector",
+        type: "bytes4",
+        indexed: true,
+        internalType: "bytes4",
+      },
+      {
+        name: "activeAt",
+        type: "uint64",
+        indexed: false,
+        internalType: "uint64",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "RouteRevoked",
+    inputs: [
+      {
+        name: "router",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+      {
+        name: "selector",
+        type: "bytes4",
+        indexed: true,
+        internalType: "bytes4",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "RoutesLocked",
+    inputs: [],
+    anonymous: false,
+  },
+  {
     type: "error",
     name: "AddressEmptyCode",
     inputs: [
@@ -203,12 +396,27 @@ export const burnVaultAbi = [
   },
   {
     type: "error",
+    name: "BuybackCapExceeded",
+    inputs: [],
+  },
+  {
+    type: "error",
     name: "FailedInnerCall",
     inputs: [],
   },
   {
     type: "error",
     name: "InsufficientBalance",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "InvalidRouter",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "InvalidToken",
     inputs: [],
   },
   {
@@ -245,6 +453,26 @@ export const burnVaultAbi = [
   },
   {
     type: "error",
+    name: "RouteAlreadyProposed",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "RouteNotActive",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "RouteNotFound",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "RoutesAreLocked",
+    inputs: [],
+  },
+  {
+    type: "error",
     name: "SafeERC20FailedOperation",
     inputs: [
       {
@@ -257,6 +485,11 @@ export const burnVaultAbi = [
   {
     type: "error",
     name: "SlippageExceeded",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "SpentMoreThanApproved",
     inputs: [],
   },
   {

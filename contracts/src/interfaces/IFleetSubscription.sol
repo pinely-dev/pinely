@@ -32,11 +32,12 @@ interface IFleetSubscription {
     error InvalidAmount();
     error SubscriptionExpired();
     error Unauthorized();
-    error NotFleetOwner();
     error CannotDecreaseActiveDevices();
 
-    function subscribeFleetPro(bytes32 fleetId, uint256 months) external;
-    function subscribeDevices(bytes32 fleetId, uint256 deviceCount, uint256 months) external;
+    /// @notice The id of the fleet that `owner` names `salt` (`keccak256(abi.encode(owner, salt))`).
+    function fleetIdOf(address owner, bytes32 salt) external pure returns (bytes32);
+    function subscribeFleetPro(bytes32 salt, uint256 months) external;
+    function subscribeDevices(bytes32 salt, uint256 deviceCount, uint256 months) external;
     function isFleetProActive(bytes32 fleetId) external view returns (bool);
     function isDeviceCovered(bytes32 fleetId) external view returns (bool);
     function getFleetProSubscription(bytes32 fleetId) external view returns (FleetSubscriptionInfo memory);
