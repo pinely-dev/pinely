@@ -6,12 +6,13 @@ import { ScrollReveal } from "./ScrollReveal";
 import { TiltCard } from "./TiltCard";
 import { stablecoinSymbol } from "@/lib/chain";
 import { robinhoodTestnet, robinhoodMainnet } from "@pinely/shared/chains";
+import { platformStatus } from "@pinely/shared/status";
 
 interface OrbitPhase {
   orbitNumber: string;
   name: string;
   network: string;
-  status: "IN PREPARATION" | "STANDBY FOR AUDIT" | "STAGE 2 PLANNED";
+  status: string;
   statusCode: string;
   badgeClass: string;
   summary: string;
@@ -24,11 +25,10 @@ const PHASES: OrbitPhase[] = [
     orbitNumber: "Phase 1",
     name: "Testnet Foundation",
     network: `${robinhoodTestnet.name} · Chain ${robinhoodTestnet.id}`,
-    status: "IN PREPARATION",
-    statusCode: "NOT DEPLOYED YET",
-    badgeClass: "standby",
-    summary:
-      "The full contract set is implemented and passes its automated tests. Next: deploy the four Stage 1 contracts to Robinhood Chain Testnet and rehearse registration, sponsored gas UserOps, the 1-tx emergency kill switch, and surplus sweeping end to end.",
+    status: "DONE",
+    statusCode: "TESTNET REHEARSAL",
+    badgeClass: "live",
+    summary: "Stage 1 rehearsed end to end on Robinhood Testnet.",
     deliverables: [
       "Deploy the four Stage 1 contracts to Robinhood Chain Testnet and verify them",
       "Gasless sponsored UserOp rail (ERC-4337 with the PINELY Paymaster)",
@@ -41,11 +41,11 @@ const PHASES: OrbitPhase[] = [
     orbitNumber: "Phase 2",
     name: "Mainnet Stage 1 Core",
     network: `${robinhoodMainnet.name} · Chain ${robinhoodMainnet.id}`,
-    status: "STANDBY FOR AUDIT",
-    statusCode: "STAGE 1 TARGET",
-    badgeClass: "standby",
+    status: platformStatus["stage1-mainnet"].level === "live" ? "LIVE · UNAUDITED" : "NOT DEPLOYED",
+    statusCode: "STAGE 1 ON MAINNET",
+    badgeClass: platformStatus["stage1-mainnet"].level === "live" ? "live" : "standby",
     summary:
-      "Production deployment of core DePIN infrastructure on Robinhood Chain. Zero mock contracts, zero address(0), zero deployer EOA custody. Protocol ownership transferred to a Safe 2-of-3 Multisig.",
+      "MachineRegistry, AccountFactory, Paymaster and SurplusSweeper deployed, owned by a 2-of-3 Safe. First machine UserOp is next.",
     deliverables: [
       "Stage 1 Core: Registry, Factory, Paymaster, Sweeper",
       "Production Safe 2-of-3 multisig governance ownership",
@@ -58,11 +58,10 @@ const PHASES: OrbitPhase[] = [
     orbitNumber: "Phase 3",
     name: "Stage 2 Liquidity & Token",
     network: "Testnet → Mainnet Stage 2",
-    status: "STAGE 2 PLANNED",
-    statusCode: "TOKEN LAUNCH ALIGNED",
-    badgeClass: "planned",
-    summary:
-      "Activating autonomous machine liquidity on Uniswap v4. Swaps gated by PinelyHook with dynamic reputation fee tiers, protocol fee routing to BurnVault, and $PINELY staking rewards.",
+    status: "IN PROGRESS",
+    statusCode: "TOKEN IS LIVE",
+    badgeClass: "standby",
+    summary: "$PINELY is live. Hook, Router and Stake deploy next.",
     deliverables: [
       "Uniswap v4 private pool hook & PinelyRouter integration",
       "Dynamic fee tiers (Bronze 0.30% down to Gold 0.05%)",

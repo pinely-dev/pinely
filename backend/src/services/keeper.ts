@@ -5,6 +5,8 @@ import {
   createPublicClient,
   createWalletClient,
   http,
+  isAddressEqual,
+  parseEventLogs,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { getActiveChain } from "@pinely/shared/chains";
@@ -12,23 +14,53 @@ import { findContractAddress, surplusSweeperAbi } from "@pinely/shared/contracts
 import { pool } from "../db/connection";
 import { getBackendChainId } from "../lib/config";
 
+/** Machines checked and swept per page. `sweepBatch` handles one page per transaction. */
+export const SWEEP_PAGE_SIZE = 50;
+/** Upper bound on pages per cycle (10,000 machines), so one cycle can never run away. */
+export const SWEEP_MAX_PAGES = 200;
+/** How long to wait for a sweep transaction to be mined before reporting it as unconfirmed. */
+export const SWEEP_RECEIPT_TIMEOUT_MS = 60_000;
+
 export interface SweepCycleResult {
+  /** Machines with a `SurplusSwept` event in a transaction that was mined successfully. */
   sweptCount: number;
+  /** Surplus detected as sweepable, in stablecoin base units (detected, not necessarily moved). */
   totalSurplus: bigint;
+  /** Transactions that were mined successfully. */
   txHashes: Hash[];
   skippedCount: number;
-  /** True when surplus was detected but nothing was sent (no keeper key configured). */
+  /** Machines whose sweep transaction failed to send, reverted, or was not confirmed in time. */
+  failedCount: number;
+  /** True when surplus was detected but nothing was sent (no valid keeper key configured). */
   dryRun: boolean;
+  /** True when the indexer could not be read, so the machine list was incomplete or empty. */
+  indexerUnavailable: boolean;
+  /** True when the page cap was reached before every machine was checked. */
+  truncated: boolean;
 }
 
-/**
- * Gets the Public & Wallet Client for the Keeper if the RPC and private key configuration is available.
- */
-function getKeeperClients(): {
+export interface KeeperClients {
   publicClient: ReturnType<typeof createPublicClient>;
   walletClient?: ReturnType<typeof createWalletClient>;
   sweeperAddress?: Address;
-} {
+}
+
+/** Test seams: the machine list and the chain clients can be replaced. */
+export interface SweepDeps {
+  /** Returns up to `limit` unfrozen machine ids greater than `afterId`, in ascending id order. */
+  listMachinePage?: (afterId: string | null, limit: number) => Promise<string[]>;
+  clients?: KeeperClients;
+}
+
+const PRIVATE_KEY_PATTERN = /^0x[0-9a-fA-F]{64}$/;
+
+/**
+ * Gets the Public & Wallet Client for the Keeper if the RPC and private key configuration is available.
+ *
+ * Only `KEEPER_PRIVATE_KEY` is read. The facilitator key is never reused for sweeps, so one hot key
+ * never carries two roles. A missing or malformed key leaves the keeper in dry-run mode (fail-closed).
+ */
+export function getKeeperClients(): KeeperClients {
   const chainId = getBackendChainId();
   const targetChain = getActiveChain(chainId);
   // The public RPC is shared by every user: production must use a provider endpoint.
@@ -43,8 +75,13 @@ function getKeeperClients(): {
     transport: http(rpcUrl),
   });
 
-  const rawKey = process.env.KEEPER_PRIVATE_KEY ?? process.env.FACILITATOR_PRIVATE_KEY;
+  const rawKey = process.env.KEEPER_PRIVATE_KEY?.trim();
   if (!rawKey) {
+    return { publicClient, sweeperAddress };
+  }
+  if (!PRIVATE_KEY_PATTERN.test(rawKey)) {
+    // Never print the value: it may still be a real secret with a typo.
+    console.error("[Keeper] KEEPER_PRIVATE_KEY is not a 32-byte hex key; running as a dry run.");
     return { publicClient, sweeperAddress };
   }
 
@@ -58,45 +95,103 @@ function getKeeperClients(): {
   return { publicClient, walletClient, sweeperAddress };
 }
 
+/** Default machine source: unfrozen machines from the indexer, keyset-paginated by id. */
+async function listMachinePageFromIndexer(
+  afterId: string | null,
+  limit: number,
+): Promise<string[]> {
+  const res = await pool.query<{ id: string }>(
+    `select id from ponder.machines
+       where frozen = false and ($1::text is null or id > $1::text)
+       order by id
+       limit $2`,
+    [afterId, limit],
+  );
+  return res.rows.map((row) => row.id);
+}
+
 /**
  * Runs 1 cycle of auditing and sweeping on-chain machine revenue surplus.
+ *
+ * Every unfrozen machine is checked, one page at a time (bounded by {@link SWEEP_MAX_PAGES}). A
+ * machine counts as swept only after its transaction is mined successfully and the sweeper emitted
+ * `SurplusSwept` for it, never merely because a transaction was submitted.
  */
-export async function runSurplusSweepCycle(targetMachineId?: string): Promise<SweepCycleResult> {
+export async function runSurplusSweepCycle(
+  targetMachineId?: string,
+  deps: SweepDeps = {},
+): Promise<SweepCycleResult> {
   const result: SweepCycleResult = {
     sweptCount: 0,
     totalSurplus: 0n,
     txHashes: [],
     skippedCount: 0,
+    failedCount: 0,
     dryRun: false,
+    indexerUnavailable: false,
+    truncated: false,
   };
 
-  const { publicClient, walletClient, sweeperAddress } = getKeeperClients();
+  const { publicClient, walletClient, sweeperAddress } = deps.clients ?? getKeeperClients();
   if (!sweeperAddress) {
     console.log("[Keeper] SurplusSweeper address not found on active chain; skipping cycle.");
     return result;
   }
 
-  // 1. Get the list of machineIds to check
-  let machineIds: Hash[] = [];
-  if (targetMachineId) {
-    machineIds = [targetMachineId as Hash];
-  } else {
-    try {
-      const res = await pool.query<{ id: string }>(
-        `select id from ponder.machines where frozen = false limit 50`,
+  const fetchPage: NonNullable<SweepDeps["listMachinePage"]> = targetMachineId
+    ? async (afterId) => (afterId === null ? [targetMachineId] : [])
+    : (deps.listMachinePage ?? listMachinePageFromIndexer);
+
+  let cursor: string | null = null;
+  let pages = 0;
+  for (;;) {
+    if (pages >= SWEEP_MAX_PAGES) {
+      result.truncated = true;
+      console.warn(
+        `[Keeper] Reached the page cap (${SWEEP_MAX_PAGES} pages of ${SWEEP_PAGE_SIZE}); remaining machines are checked next cycle.`,
       );
-      machineIds = res.rows.map((row) => row.id as Hash);
-    } catch {
-      // If the ponder indexer has no rows in the database yet, use an empty array
-      machineIds = [];
+      break;
     }
+
+    let ids: string[];
+    try {
+      ids = await fetchPage(cursor, SWEEP_PAGE_SIZE);
+    } catch (err) {
+      // Not "no machines": the indexer cannot be read (not deployed, still backfilling, or down).
+      result.indexerUnavailable = true;
+      console.warn(
+        `[Keeper] Indexer unavailable (${err instanceof Error ? err.message : String(err)}); ` +
+          `skipping the rest of this sweep cycle.`,
+      );
+      break;
+    }
+    if (ids.length === 0) break;
+
+    pages++;
+    cursor = ids[ids.length - 1];
+    await sweepPage(ids as Hash[], { publicClient, walletClient, sweeperAddress }, result);
+    if (ids.length < SWEEP_PAGE_SIZE) break;
   }
 
-  if (machineIds.length === 0) {
-    return result;
+  if (result.dryRun) {
+    // No valid keeper key is configured, so nothing was sent and sweptCount stays 0.
+    console.log(
+      `[Keeper Dry-run] Detected surplus ready to sweep: ${result.totalSurplus.toString()} stablecoin base units.`,
+    );
   }
+  return result;
+}
 
-  // 2. Check each machine's surplus in a batch via multicall to prevent DoS/429
+/** Checks one page of machines, then sweeps the ones with surplus (or records a dry run). */
+async function sweepPage(
+  machineIds: Hash[],
+  clients: Required<Pick<KeeperClients, "publicClient" | "sweeperAddress">> &
+    Pick<KeeperClients, "walletClient">,
+  result: SweepCycleResult,
+): Promise<void> {
+  const { publicClient, walletClient, sweeperAddress } = clients;
+
+  // 1. Check each machine's surplus in a batch via multicall to prevent DoS/429
   const sweepableMachines: Hash[] = [];
 
   try {
@@ -149,54 +244,76 @@ export async function runSurplusSweepCycle(targetMachineId?: string): Promise<Sw
     }
   }
 
-  if (sweepableMachines.length === 0) {
-    return result;
+  if (sweepableMachines.length === 0) return;
+
+  // 2. Execute the on-chain sweep transaction if the keeper wallet is active
+  if (!walletClient) {
+    result.dryRun = true;
+    return;
   }
 
-  // 3. Execute the on-chain sweep transaction if the keeper wallet is active
-  if (walletClient) {
-    try {
-      let txHash: Hash;
-      if (sweepableMachines.length === 1) {
-        txHash = await walletClient.writeContract({
-          chain: walletClient.chain,
-          account: walletClient.account!,
-          address: sweeperAddress,
-          abi: surplusSweeperAbi,
-          functionName: "sweep",
-          args: [sweepableMachines[0]],
-        });
-      } else {
-        txHash = await walletClient.writeContract({
-          chain: walletClient.chain,
-          account: walletClient.account!,
-          address: sweeperAddress,
-          abi: surplusSweeperAbi,
-          functionName: "sweepBatch",
-          args: [sweepableMachines],
-        });
-      }
-
-      result.sweptCount = sweepableMachines.length;
-      result.txHashes.push(txHash);
-      console.log(
-        `[Keeper] Successfully swept surplus for ${sweepableMachines.length} machines (Tx: ${txHash}).`,
-      );
-    } catch (err) {
-      console.error(
-        "[Keeper] Failed to execute on-chain sweep:",
-        err instanceof Error ? err.message : err,
-      );
+  const count = sweepableMachines.length;
+  let txHash: Hash;
+  try {
+    if (count === 1) {
+      txHash = await walletClient.writeContract({
+        chain: walletClient.chain,
+        account: walletClient.account!,
+        address: sweeperAddress,
+        abi: surplusSweeperAbi,
+        functionName: "sweep",
+        args: [sweepableMachines[0]],
+      });
+    } else {
+      txHash = await walletClient.writeContract({
+        chain: walletClient.chain,
+        account: walletClient.account!,
+        address: sweeperAddress,
+        abi: surplusSweeperAbi,
+        functionName: "sweepBatch",
+        args: [sweepableMachines],
+      });
     }
-  } else {
-    // Dry run: no keeper key is configured, so nothing is sent and sweptCount stays 0.
-    result.dryRun = true;
+  } catch (err) {
+    result.failedCount += count;
+    console.error(
+      "[Keeper] Failed to send on-chain sweep:",
+      err instanceof Error ? err.message : err,
+    );
+    return;
+  }
+
+  // 3. Count only what the chain confirms. Waiting here also keeps the next page's nonce ordered.
+  try {
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash: txHash,
+      timeout: SWEEP_RECEIPT_TIMEOUT_MS,
+    });
+    if (receipt.status !== "success") {
+      result.failedCount += count;
+      console.error(`[Keeper] Sweep transaction reverted (Tx: ${txHash}).`);
+      return;
+    }
+    const swept = parseEventLogs({
+      abi: surplusSweeperAbi,
+      eventName: "SurplusSwept",
+      logs: receipt.logs,
+    }).filter((log) => isAddressEqual(log.address, sweeperAddress));
+    result.sweptCount += swept.length;
+    result.txHashes.push(txHash);
     console.log(
-      `[Keeper Dry-run] Detected surplus ready to sweep for ${sweepableMachines.length} machines: ${result.totalSurplus.toString()} stablecoin base units`,
+      `[Keeper] Swept surplus for ${swept.length} of ${count} machines (Tx: ${txHash}).` +
+        (swept.length < count
+          ? " The contract skipped the rest (frozen, disabled, or allowance too low)."
+          : ""),
+    );
+  } catch (err) {
+    result.failedCount += count;
+    console.error(
+      `[Keeper] Sweep transaction was not confirmed (Tx: ${txHash}); check it on the explorer:`,
+      err instanceof Error ? err.message : err,
     );
   }
-
-  return result;
 }
 
 /**

@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { getAddress, isAddress } from "viem";
 import { bodyLimit } from "hono/body-limit";
 import {
   PILOT_HARDWARE_ENCLAVES,
@@ -23,6 +24,16 @@ export const pilotRateLimiter = createRateLimiter({
 
 function text(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
+}
+
+/**
+ * An optional wallet or Safe address. Empty is allowed. Anything else must be a real address (the zero
+ * address is not one) and is stored in checksum form. Returns `undefined` when it is not valid.
+ */
+function optionalAddress(value: string): string | null | undefined {
+  if (!value) return null;
+  if (!isAddress(value, { strict: false }) || /^0x0{40}$/.test(value)) return undefined;
+  return getAddress(value);
 }
 
 /**
@@ -57,6 +68,8 @@ pilotRoute.post(
     const machineType = text(body.machineType);
     const hardwareEnclave = text(body.hardwareEnclave);
     const notes = text(body.notes);
+    const operatorAddress = optionalAddress(text(body.operatorAddress));
+    const safeAddress = optionalAddress(text(body.safeAddress));
     const email = text(body.email).toLowerCase();
     const deviceCount = body.deviceCount;
 
@@ -90,12 +103,19 @@ pilotRoute.post(
     if (email.length > PILOT_LIMITS.email || !EMAIL_PATTERN.test(email)) {
       return c.json({ error: "Invalid contact email" }, 400);
     }
+    if (operatorAddress === undefined) {
+      return c.json({ error: "Invalid operator wallet address" }, 400);
+    }
+    if (safeAddress === undefined) {
+      return c.json({ error: "Invalid Safe address" }, 400);
+    }
 
     try {
       const { rows } = await pool.query<{ id: number; createdAt: string }>(
         `insert into "${APP_SCHEMA}".pilot_applications
-          (operator_name, organization, machine_type, device_count, hardware_enclave, email, notes, status)
-          values ($1, $2, $3, $4, $5, $6, $7, 'new')
+          (operator_name, organization, machine_type, device_count, hardware_enclave, email, notes,
+           operator_address, safe_address, status)
+          values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'new')
           returning id, created_at as "createdAt"`,
         [
           operatorName,
@@ -105,6 +125,8 @@ pilotRoute.post(
           hardwareEnclave || null,
           email,
           notes || null,
+          operatorAddress,
+          safeAddress,
         ],
       );
       const response: PilotApplicationResponse = { status: "received", data: rows[0] };

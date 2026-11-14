@@ -5,7 +5,8 @@ import { useQueryClient, type QueryKey } from "@tanstack/react-query";
 import { useConfig, useSendTransaction, useSwitchChain } from "wagmi";
 import { waitForTransactionReceipt } from "wagmi/actions";
 import { supportedChains, type SupportedChainId } from "@pinely/shared/chains";
-import { activeChain } from "@/lib/chain";
+import { findContractName } from "@pinely/shared/contracts";
+import { activeChain, stablecoinSymbol } from "@/lib/chain";
 import type { PreparedAction, PreparedTransaction } from "@pinely/shared/types";
 import { describeWalletError } from "@pinely/shared/wallet-errors";
 import { useWallet } from "@/providers/WalletContext";
@@ -69,6 +70,21 @@ export function explorerTxUrl(chainId: number, hash: string): string | undefined
 /** A failure whose message is already written for the user. */
 class TxFailure extends Error {}
 
+/** The user declined the notice that comes before the wallet prompt. */
+class TxCancelled extends Error {}
+
+/** Names the contract a transaction calls. An address that is not in the address book is never given a name. */
+function contractLabel(chainId: number, address: string): string {
+  const name = findContractName(chainId, address);
+  const label =
+    name === "STABLECOIN" || name === "MockUSDG"
+      ? `${stablecoinSymbol} token`
+      : name === "PINELY"
+        ? "$PINELY token"
+        : name;
+  return `${label ?? "A contract that is not in the PINELY address book"} · ${address}`;
+}
+
 /** Fail closed: a prepared transaction for a chain this build does not support is never sent. */
 function asSupportedChainId(chainId: number): SupportedChainId {
   const match = supportedChains.find((c) => c.id === chainId);
@@ -80,6 +96,9 @@ type Outcome = { phase: "cancelled"; notice: string } | { phase: "error"; error:
 
 /** Maps anything thrown during an action to a short message. Raw error text never reaches the UI. */
 function toOutcome(error: unknown, networkName: string): Outcome {
+  if (error instanceof TxCancelled) {
+    return { phase: "cancelled", notice: "Cancelled. Nothing was sent." };
+  }
   if (error instanceof TxFailure || isApiError(error)) {
     // Both carry text written for people: backend messages and our own failures.
     return { phase: "error", error: error.message };
@@ -100,7 +119,7 @@ function sleep(ms: number): Promise<void> {
  * approval step (if any), send the transaction, wait for the receipt, then wait for the indexer.
  */
 export function usePreparedTx() {
-  const { isConnected, isAuthenticated, chainId } = useWallet();
+  const { isConnected, isAuthenticated, chainId, confirmBeforeSign } = useWallet();
   const config = useConfig();
   const queryClient = useQueryClient();
   const { sendTransactionAsync } = useSendTransaction();
@@ -154,6 +173,24 @@ export function usePreparedTx() {
         const target = asSupportedChainId(prepared.chainId);
         networkName = supportedChains.find((c) => c.id === target)?.name ?? networkName;
         const total = prepared.approvalStep ? 2 : 1;
+
+        // Before the wallet asks: which network, which contract, and what the signature allows.
+        const approved = await confirmBeforeSign({
+          title: "Confirm before signing",
+          network: `${networkName} (${target})`,
+          steps: [
+            ...(prepared.approvalStep
+              ? [
+                  {
+                    contract: contractLabel(target, prepared.approvalStep.to),
+                    permission: prepared.approvalStep.description,
+                  },
+                ]
+              : []),
+            { contract: contractLabel(target, prepared.to), permission: prepared.description },
+          ],
+        });
+        if (!approved) throw new TxCancelled();
 
         if (chainId !== target) {
           await switchChainAsync({ chainId: target });
@@ -221,6 +258,7 @@ export function usePreparedTx() {
     [
       config,
       chainId,
+      confirmBeforeSign,
       isAuthenticated,
       isConnected,
       queryClient,

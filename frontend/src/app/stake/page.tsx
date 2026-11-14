@@ -3,12 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { findContractAddress } from "@pinely/shared/contracts";
-import { activeChain, stablecoinSymbol, blockTimeLabel } from "@/lib/chain";
+import { activeChain, stablecoinSymbol } from "@/lib/chain";
 import { Navbar } from "@/components/pinely/Navbar";
 import { PageBackground } from "@/components/pinely/PageBackground";
 import { StakePanel } from "@/components/pinely/StakePanel";
 import { TextScramble } from "@/components/pinely/TextScramble";
 import { Footer } from "@/components/pinely/Footer";
+import { Stage2Banner } from "@/components/pinely/StageBadge";
 import { shortHex } from "@/lib/machine-view";
 
 const FLEET_PRESETS = [5, 10, 25, 50, 100];
@@ -119,14 +120,11 @@ export default function StakePage() {
               </svg>
               <span>Slashing: Authority Guard</span>
             </span>
-            <span className="telemetry-chip network">
-              <span className="telemetry-chip-dot" />
-              <span>Block time {blockTimeLabel}</span>
-            </span>
           </div>
         </div>
 
         <section className="sec" style={{ paddingTop: "12px" }}>
+          {!stakeContract && <Stage2Banner />}
           {/* Reputation Tier Cards */}
           <div className="stake-tier-grid">
             {/* Bronze Tier */}
@@ -282,7 +280,8 @@ export default function StakePage() {
                     color: "#ecd8de",
                   }}
                 >
-                  Hardware attestation + 90 days registered + 10,000 $PINELY staked. Lowest fee.
+                  Hardware attestation + 90 days registered + 10,000 $PINELY staked per operator.
+                  Lowest fee.
                 </p>
               </div>
               <div
@@ -291,9 +290,7 @@ export default function StakePage() {
               >
                 <div className="dossier-spec-row">
                   <span className="dossier-spec-label">Stake Required</span>
-                  <b className="dossier-spec-val" style={{ color: "#ffffff" }}>
-                    10,000 $PINELY
-                  </b>
+                  $110,000 $PINELY per operator$2
                 </div>
                 <div className="dossier-spec-row">
                   <span className="dossier-spec-label">Min Active Days</span>
@@ -486,8 +483,9 @@ export default function StakePage() {
                 Slashing Authority
               </h2>
               <p className="note" style={{ margin: 0, fontSize: "13px", lineHeight: 1.6 }}>
-                A designated slashing authority, or contract owner, can slash up to 100% of an
-                operator&apos;s stake, including unbonding funds, routing directly to the BurnVault.
+                Staked $PINELY can be slashed by the contract owner (the PINELY Safe, 2-of-3) for
+                policy violations. Slashing can remove up to 100% of a stake, including funds in the
+                7-day unbonding period.
               </p>
             </div>
 
@@ -506,11 +504,11 @@ export default function StakePage() {
                   margin: "14px 0 6px",
                 }}
               >
-                Non-Custodial Staking
+                Staking Custody
               </h2>
               <p className="note" style={{ margin: 0, fontSize: "13px", lineHeight: 1.6 }}>
                 Staked tokens are escrowed by PinelyStake.sol. A Safe multisig can stake like any
-                wallet, ensuring institutional custody and transparent accounting.
+                wallet.
               </p>
             </div>
           </div>

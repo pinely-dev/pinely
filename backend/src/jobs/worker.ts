@@ -51,7 +51,12 @@ export async function startQueueWorker(): Promise<PgBoss | null> {
             `[Worker] Processing auto-sweep job for machine: ${machineId ?? "ALL"}, trigger: ${triggeredBy ?? "cron"}`,
           );
           try {
-            await runSurplusSweepCycle(machineId);
+            const outcome = await runSurplusSweepCycle(machineId);
+            console.log(
+              `[Worker] Auto-sweep finished: swept=${outcome.sweptCount} failed=${outcome.failedCount} ` +
+                `skipped=${outcome.skippedCount} dryRun=${outcome.dryRun} ` +
+                `indexerUnavailable=${outcome.indexerUnavailable} truncated=${outcome.truncated}`,
+            );
           } catch (err) {
             console.error("[Worker] Error during auto-sweep cycle:", err);
           }

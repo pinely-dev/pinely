@@ -122,7 +122,7 @@ export function ProblemContrast() {
 
               <div className="threat-footer">
                 <span className="shield-tag">PINELY PROTOCOL</span>
-                <span className="shield-guarantee">Max Loss Capped to Daily Quota</span>
+                <span className="shield-guarantee">Daily limit enforced from Stage 2</span>
               </div>
             </div>
           </TiltCard>

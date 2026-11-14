@@ -230,8 +230,8 @@ export function FleetKeyControls({
         <div style={{ marginTop: "12px", marginBottom: "16px" }}>
           <h3 style={{ margin: "0 0 6px", fontSize: "20px" }}>Session Key Manager</h3>
           <p className="note" style={{ margin: 0, fontSize: "13px" }}>
-            Delegates restricted signing authority to the physical rover&apos;s TPM. Rotating
-            submits two sequential onchain updates.
+            Sets the key the machine signs with and the window it is valid for. You can rotate or
+            revoke it at any time. Rotating submits two sequential onchain updates.
           </p>
         </div>
 
@@ -332,8 +332,9 @@ export function FleetKeyControls({
         <div style={{ marginTop: "12px", marginBottom: "16px" }}>
           <h3 style={{ margin: "0 0 6px", fontSize: "20px" }}>Multisig Guardian</h3>
           <p className="note" style={{ margin: 0, fontSize: "13px" }}>
-            Delegates circuit-breaker emergency freeze rights to an external security address (e.g.,
-            Safe Multisig). Cannot withdraw or transfer assets.
+            Delegates emergency freeze rights to an external security address (for example a Safe
+            multisig). The guardian can freeze, but cannot unfreeze, change policies, withdraw, or
+            transfer assets.
           </p>
         </div>
 
@@ -409,8 +410,9 @@ export function FleetKeyControls({
         <div style={{ marginTop: "12px", marginBottom: "16px" }}>
           <h3 style={{ margin: "0 0 6px", fontSize: "20px" }}>Asset Allowlist</h3>
           <p className="note" style={{ margin: 0, fontSize: "13px" }}>
-            Specifies approved ERC-20 tokens that the machine account is permitted to swap.
-            Unapproved assets fail immediately.
+            Lists the ERC-20 tokens a machine is approved to swap. The registry stores the list and
+            PinelyHook (Stage 2, not deployed) enforces it, so nothing is enforced until Stage 2 is
+            deployed.
           </p>
         </div>
 

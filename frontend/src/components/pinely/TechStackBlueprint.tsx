@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { TextScramble } from "./TextScramble";
 import { ScrollReveal } from "./ScrollReveal";
-import { stablecoinSymbol, nativeSymbol, chainProfile, blockTimeLabel } from "@/lib/chain";
+import { stablecoinSymbol, nativeSymbol } from "@/lib/chain";
 
 interface Layer {
   number: string;
@@ -52,7 +52,7 @@ const LAYERS: Layer[] = [
       { label: "Account Architecture", value: "ERC-4337 EntryPoint v0.7 Compliant" },
       {
         label: "Time Evaluation",
-        value: `block.timestamp (blocks about every ${chainProfile.blockTimeMs} ms)`,
+        value: "block.timestamp",
       },
       { label: "Spend Caps", value: "Stored in the registry, enforced by PinelyHook (Stage 2)" },
       { label: "Emergency Protection", value: "1-Tx Fleet Kill Switch (Operator Safe)" },
@@ -214,7 +214,7 @@ export function TechStackBlueprint() {
               {/* Fail-Closed Guarantee Banner */}
               <div className="inspector-failstate">
                 <div className="failstate-header">
-                  <span className="failstate-badge">FAIL-CLOSED PROTOCOL GUARANTEE</span>
+                  <span className="failstate-badge">FAIL-CLOSED DESIGN</span>
                 </div>
                 <p className="failstate-text">{activeLayer.failState}</p>
               </div>
@@ -230,7 +230,6 @@ export function TechStackBlueprint() {
                   Lookup Machine Passport →
                 </Link>
               </div>
-              <span className="inspector-note">Block time: {blockTimeLabel}</span>
             </div>
           </div>
         </div>

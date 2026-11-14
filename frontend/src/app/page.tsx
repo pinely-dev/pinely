@@ -96,8 +96,7 @@ export default function HomePage() {
         <section className="foot" id="contact" style={{ marginTop: "var(--space-section)" }}>
           <h2>Put your machines to work.</h2>
           <p style={{ maxWidth: "540px", color: "#ecd8de" }}>
-            We&apos;re onboarding our first fleets of delivery rovers, drones, and charging
-            stations. Session keys, a sub-second kill switch, sponsored gas, and an engineering team
+            Session keys, a single-transaction kill switch, sponsored gas, and an engineering team
             that ships with you.
           </p>
           <div className="ctas" style={{ marginTop: "24px" }}>

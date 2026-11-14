@@ -45,6 +45,3 @@ export const stablecoinSymbol = chainProfile.stablecoinSymbol;
 
 /** Symbol of the gas token. The interface must never spell it as a literal. */
 export const nativeSymbol = chainProfile.nativeSymbol;
-
-/** Block time as a label, for example `~100ms`. */
-export const blockTimeLabel = `~${chainProfile.blockTimeMs}ms`;

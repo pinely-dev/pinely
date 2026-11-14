@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  type ReactNode,
+} from "react";
 import type { Address } from "viem";
 import { useAccount, useDisconnect, useSwitchChain, useChainId, useSignMessage } from "wagmi";
 import {
@@ -11,6 +19,7 @@ import {
 } from "@rainbow-me/rainbowkit";
 import type { SupportedChain } from "@pinely/shared/chains";
 import { activeChain } from "@/lib/chain";
+import { SignConfirmModal, type SignConfirmRequest } from "@/components/pinely/SignConfirmModal";
 import { describeWalletError } from "@pinely/shared/wallet-errors";
 import { isApiError } from "@/lib/http";
 import {
@@ -39,6 +48,11 @@ interface WalletContextType {
   /** A neutral note, for example "Sign-in cancelled.". Not an error. */
   authNotice: string | null;
   signInWithEthereum: (targetAddress?: string) => Promise<boolean>;
+  /**
+   * Shows network, contract called and permission granted before the wallet is asked to sign.
+   * Resolves `true` only when the user continues.
+   */
+  confirmBeforeSign: (request: SignConfirmRequest) => Promise<boolean>;
   openConnectModal?: () => void;
   openAccountModal?: () => void;
   openChainModal?: () => void;
@@ -61,6 +75,8 @@ const WalletContext = createContext<WalletContextType>({
   authError: null,
   authNotice: null,
   signInWithEthereum: async () => false,
+  // Fail closed: without a provider there is nobody to ask, so nothing is approved.
+  confirmBeforeSign: async () => false,
 });
 
 interface WalletProviderProps {
@@ -89,6 +105,25 @@ export function WalletProvider({
   const [isAuthenticating, setIsAuthenticating] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authNotice, setAuthNotice] = useState<string | null>(null);
+
+  // The notice shown before any signature: network, contract called, permission granted.
+  const confirmResolver = useRef<((approved: boolean) => void) | null>(null);
+  const [confirmRequest, setConfirmRequest] = useState<SignConfirmRequest | null>(null);
+  const confirmBeforeSign = useCallback(
+    (request: SignConfirmRequest) =>
+      new Promise<boolean>((resolve) => {
+        confirmResolver.current?.(false); // a newer request replaces one nobody answered
+        confirmResolver.current = resolve;
+        setConfirmRequest(request);
+      }),
+    [],
+  );
+  const decideConfirm = useCallback((approved: boolean) => {
+    const resolve = confirmResolver.current;
+    confirmResolver.current = null;
+    setConfirmRequest(null);
+    resolve?.(approved);
+  }, []);
 
   // Read after mount. The server render has no localStorage, so reading it during the first
   // render would make the client's HTML differ from the server's (a hydration mismatch).
@@ -182,9 +217,26 @@ export function WalletProvider({
       }
 
       try {
-        setIsAuthenticating(true);
         setAuthError(null);
         setAuthNotice(null);
+
+        // Say what is about to be signed before the wallet asks. Signing in is a message signature:
+        // no contract is called and nothing is approved.
+        const approved = await confirmBeforeSign({
+          title: "Sign in to PINELY",
+          network: `${targetChain.name} (${targetChain.id})`,
+          steps: [
+            {
+              contract: "None. This is a message signature, not a transaction.",
+              permission: `Proves that you control ${activeAddress}. It does not approve any transaction or token spending.`,
+            },
+          ],
+        });
+        if (!approved) {
+          setAuthNotice("Sign-in cancelled.");
+          return false;
+        }
+        setIsAuthenticating(true);
 
         // 1. Get a one-time nonce from the server
         const nonce = await fetchSiweNonce();
@@ -235,7 +287,15 @@ export function WalletProvider({
         setIsAuthenticating(false);
       }
     },
-    [wagmiAddress, currentChainId, signMessageAsync, setAuthStatusState, targetChain.name],
+    [
+      wagmiAddress,
+      currentChainId,
+      signMessageAsync,
+      setAuthStatusState,
+      targetChain.name,
+      targetChain.id,
+      confirmBeforeSign,
+    ],
   );
 
   // Connect through the RainbowKit modal
@@ -363,12 +423,14 @@ export function WalletProvider({
         authError,
         authNotice,
         signInWithEthereum,
+        confirmBeforeSign,
         openConnectModal,
         openAccountModal,
         openChainModal,
       }}
     >
       {children}
+      <SignConfirmModal request={confirmRequest} onDecision={decideConfirm} />
     </WalletContext.Provider>
   );
 }

@@ -8,6 +8,8 @@
     ".": "./index.ts",
     "./chains": "./chains/index.ts",
     "./contracts": "./contracts/index.ts",
+    "./status": "./status.ts",
+    "./proofs": "./proofs.ts",
     "./csv": "./csv.ts",
     "./wallet-errors": "./wallet-errors.ts",
     "./types": "./types/index.ts"

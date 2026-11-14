@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { activeChain, blockTimeLabel } from "@/lib/chain";
+import { activeChain } from "@/lib/chain";
 import { DataState } from "@/components/pinely/DataState";
 import { explorerTxUrl } from "@/hooks/usePreparedTx";
 import { useFleetViolations } from "@/lib/api";
@@ -29,7 +29,7 @@ export function FleetViolationsCard({ operator }: { operator: string }) {
       <div className="card-top-badge-row">
         <span className="security-badge sentinel font-mono">SENTINEL AUDIT MONITOR</span>
         <span className="font-mono text-xs" style={{ color: "var(--mut)" }}>
-          SUB-SECOND DETECTION
+          INDEXER-BASED
         </span>
       </div>
 
@@ -66,11 +66,10 @@ export function FleetViolationsCard({ operator }: { operator: string }) {
               </svg>
             </div>
 
-            <div className="sentinel-shield-headline font-mono">ALL FLEET NODES COMPLIANT</div>
+            <div className="sentinel-shield-headline font-mono">NO VIOLATIONS RECORDED</div>
             <p className="sentinel-shield-body">
-              Continuous cryptographic surveillance active on Robinhood Chain ({blockTimeLabel}{" "}
-              block time). Zero spend-limit breaches, unapproved token swaps, or unauthorized
-              UserOperations recorded on MachineRegistry.sol.
+              The PINELY indexer has recorded no policy violations for this fleet. Spend limits are
+              enforced by PinelyHook, which is a Stage 2 contract and is not deployed.
             </p>
 
             {/* 4-Point Security Telemetry Grid (2x2 Matrix) */}
@@ -78,25 +77,25 @@ export function FleetViolationsCard({ operator }: { operator: string }) {
               <div className="sentinel-matrix-cell">
                 <span className="sentinel-matrix-label font-mono">SURVEILLANCE ENGINE</span>
                 <span className="sentinel-matrix-val font-mono" style={{ color: "#ffffff" }}>
-                  {blockTimeLabel} blocks
+                  Onchain events
                 </span>
               </div>
               <div className="sentinel-matrix-cell">
-                <span className="sentinel-matrix-label font-mono">SPEND CEILING MONITOR</span>
+                <span className="sentinel-matrix-label font-mono">SPEND LIMIT</span>
                 <span className="sentinel-matrix-val font-mono" style={{ color: "var(--bl)" }}>
-                  0 Breaches Recorded
+                  Stage 2 · not deployed
                 </span>
               </div>
               <div className="sentinel-matrix-cell">
-                <span className="sentinel-matrix-label font-mono">SESSION KEY INTEGRITY</span>
+                <span className="sentinel-matrix-label font-mono">SESSION KEY WINDOW</span>
                 <span className="sentinel-matrix-val font-mono" style={{ color: "#ffffff" }}>
-                  100% Verified (≤30D)
+                  Set by the operator
                 </span>
               </div>
               <div className="sentinel-matrix-cell">
                 <span className="sentinel-matrix-label font-mono">CIRCUIT BREAKER</span>
                 <span className="sentinel-matrix-val font-mono" style={{ color: "#ffffff" }}>
-                  Armed &amp; Standby
+                  Single-transaction freeze
                 </span>
               </div>
             </div>
@@ -104,24 +103,27 @@ export function FleetViolationsCard({ operator }: { operator: string }) {
             {/* Active Cryptographic Audit Verification Checks */}
             <div className="sentinel-audit-checks font-mono text-xs">
               <div className="sentinel-audit-row">
-                <span className="sentinel-check-icon">✓</span>
-                <span>EIP-712 machine signatures validated against spend policies</span>
-                <span className="sentinel-audit-badge">PASS</span>
+                <span className="sentinel-check-icon">·</span>
+                <span>
+                  Signed spend intents are checked against spend policies by PinelyHook (Stage 2,
+                  not deployed)
+                </span>
+                <span className="sentinel-audit-badge">STAGE 2</span>
               </div>
               <div className="sentinel-audit-row">
-                <span className="sentinel-check-icon">✓</span>
-                <span>MachineRegistry.sol daily aggregate caps intact (Zero overspend)</span>
-                <span className="sentinel-audit-badge">PASS</span>
+                <span className="sentinel-check-icon">·</span>
+                <span>Daily aggregate caps are enforced by PinelyHook (Stage 2, not deployed)</span>
+                <span className="sentinel-audit-badge">STAGE 2</span>
               </div>
               <div className="sentinel-audit-row">
-                <span className="sentinel-check-icon">✓</span>
-                <span>Hardware TPM session delegation keys enforcing ≤30-day expiry</span>
-                <span className="sentinel-audit-badge">PASS</span>
+                <span className="sentinel-check-icon">·</span>
+                <span>A session key is valid only inside the window the operator sets</span>
+                <span className="sentinel-audit-badge">BY DESIGN</span>
               </div>
             </div>
 
             <div className="sentinel-shield-status-bar font-mono">
-              ● REALTIME SENTINEL SURVEILLANCE ACTIVE · ALL HARDWARE NODES WITHIN BOUNDS
+              ● NO POLICY VIOLATIONS IN THE INDEXER
             </div>
           </div>
         ) : (

@@ -39,6 +39,10 @@ export interface PilotApplicationRequest {
   machineType: PilotMachineType;
   deviceCount: number;
   hardwareEnclave?: PilotHardwareEnclave;
+  /** The operator's wallet. Optional; checked and normalised to a checksum address by the backend. */
+  operatorAddress?: string;
+  /** The operator's Safe multisig. Optional; checked and normalised the same way. */
+  safeAddress?: string;
   notes?: string;
 }
 
