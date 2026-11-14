@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { activeChain } from "@/lib/chain";
-import { findContractAddress } from "@pinely/shared/contracts";
 import { Navbar } from "@/components/pinely/Navbar";
 import { PageBackground } from "@/components/pinely/PageBackground";
 import { Footer } from "@/components/pinely/Footer";
@@ -153,7 +152,7 @@ export default function MapPage() {
 
         {/* Tactical Radar Terminal */}
         <section className="sec page-reveal-1" style={{ paddingTop: "20px" }}>
-          {!findContractAddress(activeChain.id, "PinelyHook") && <Stage2Banner />}
+          <Stage2Banner />
           <div className="radar-terminal">
             {/* Top HUD Telemetry Bar */}
             <div className="radar-hud-bar">

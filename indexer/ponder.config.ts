@@ -39,6 +39,17 @@ if (!Number.isInteger(startBlock) || startBlock <= 0) {
   throw new Error(`[PINELY Ponder] START_BLOCK must be a positive integer (got "${startBlock}").`);
 }
 
+// The Stage 2 contracts were deployed long after Stage 1 (mainnet: block 114059645, against 113448196 for Stage 1).
+// Starting them at their own block keeps the backfill from scanning every block in between five more times.
+// STAGE2_START_BLOCK must not be later than the first Stage 2 deployment block. When unset it is START_BLOCK:
+// always correct, only slower.
+const stage2StartBlock = Number(process.env.STAGE2_START_BLOCK ?? startBlock);
+if (!Number.isInteger(stage2StartBlock) || stage2StartBlock < startBlock) {
+  throw new Error(
+    `[PINELY Ponder] STAGE2_START_BLOCK must be an integer of at least START_BLOCK (got "${process.env.STAGE2_START_BLOCK}").`,
+  );
+}
+
 /** Stage 1 contracts: indexing cannot start without them. */
 function requireDeployed(name: string): `0x${string}` {
   const address = findContractAddress(chainId, name);
@@ -75,7 +86,7 @@ function optionalDeployed(name: string): `0x${string}` {
  * indexed normally.
  */
 function undeployedRange(name: string): { endBlock?: number } {
-  return findContractAddress(chainId, name) ? {} : { endBlock: startBlock };
+  return findContractAddress(chainId, name) ? {} : { endBlock: stage2StartBlock };
 }
 
 // The schema of the indexed tables is decided by `ponder.schema.ts` (`onchainSchema`), not by this
@@ -137,35 +148,35 @@ export default createConfig({
       abi: pinelyRouterAbi,
       address: optionalDeployed("PinelyRouter"),
       ...undeployedRange("PinelyRouter"),
-      startBlock,
+      startBlock: stage2StartBlock,
     },
     PinelyHook: {
       network: "chain",
       abi: pinelyHookAbi,
       address: optionalDeployed("PinelyHook"),
       ...undeployedRange("PinelyHook"),
-      startBlock,
+      startBlock: stage2StartBlock,
     },
     BurnVault: {
       network: "chain",
       abi: burnVaultAbi,
       address: optionalDeployed("BurnVault"),
       ...undeployedRange("BurnVault"),
-      startBlock,
+      startBlock: stage2StartBlock,
     },
     PinelyStake: {
       network: "chain",
       abi: pinelyStakeAbi,
       address: optionalDeployed("PinelyStake"),
       ...undeployedRange("PinelyStake"),
-      startBlock,
+      startBlock: stage2StartBlock,
     },
     FleetSubscription: {
       network: "chain",
       abi: fleetSubscriptionAbi,
       address: optionalDeployed("FleetSubscription"),
       ...undeployedRange("FleetSubscription"),
-      startBlock,
+      startBlock: stage2StartBlock,
     },
   },
 });

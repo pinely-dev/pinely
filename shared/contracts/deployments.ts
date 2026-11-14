@@ -17,6 +17,38 @@ export const deployments = {
       address: "0x49a09d2558c4497913eada66db0e3ce1e7c0b579",
       txHash: "0xd5e2ac0b690f5944440bd06257dcb5c948b8dd978a4a87a085bb41182533f607",
     },
+    BurnVault: {
+      address: "0x74a5c21f5677666f7e592e8348afab953546a4f8",
+      txHash: "0xc62856a73422a64c8e5eb9f2feeb474e305b41f76006c206f234f2073f6dfdf9",
+    },
+    CreatorFeeSplitter: {
+      address: "0x883160436c7033fb846ac5b45f0fddf9bb95cde0",
+      txHash: "0x3b85cea37f3119d49b4cb27916923bf4ad311098fea2443902b83f871ca1de9a",
+    },
+    PinelyStake: {
+      address: "0xe452116e51df4df12f4f01675a0549b3e247752e",
+      txHash: "0xf1f08c97429542ecfe94714ba274b3324c83fc89367905d451e9fcb97ddad36b",
+    },
+    FleetSubscription: {
+      address: "0x782cb14f65e6022d9528a65ca6384c4fc2715882",
+      txHash: "0x613799aebd2b1fe4e3826f76810e32eadcbb8b20dc933ac6d59902ac00c775f4",
+    },
+    PinelyBuybackExecutor: {
+      address: "0x4438adc610b2b92784cf45c05c3aab16ee740d05",
+      txHash: "0x7758494fbfc18041720f5774039ecb623b2b8bafb635d42dac9d23a09d79b157",
+    },
+    PinelyHook: {
+      address: "0xc7a0fcac5bbdaeecbc8daacaeb295f5670998ac0",
+      txHash: "0x58d58086c83a68402c6ac522b0807fb9659cb0e3339dfd1221b2e43672df3df5",
+    },
+    PinelyRouter: {
+      address: "0xaa9b7f99c5b57197aa96096af76332a265ec0357",
+      txHash: "0x35e48b7356d9b5d9945fe27c484615b75a967b74b867e615471c1dc2402fb571",
+    },
+    PoolSeeder: {
+      address: "0x392e338bdb5756a76066c9c11a87d7e878e83f47",
+      txHash: "0x32ea9822ad2a6c064dc6f099d08c267f364a6df119b442d8cb6c406a716eeec3",
+    },
   },
   "46630": {
     MockUSDG: {

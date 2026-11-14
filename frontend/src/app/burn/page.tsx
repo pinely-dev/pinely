@@ -14,6 +14,7 @@ import { PageBackground } from "@/components/pinely/PageBackground";
 import { Footer } from "@/components/pinely/Footer";
 import { TokenCa } from "@/components/pinely/TokenCa";
 import { Stage2Banner } from "@/components/pinely/StageBadge";
+import { activeStage2State } from "@/lib/stage2";
 
 const VOLUME_PRESETS = [100000, 250000, 500000, 1000000, 5000000];
 
@@ -22,6 +23,8 @@ export default function BurnPage() {
 
   // Stage 2: BurnVault is only live where it has been deployed. Without an address there is nothing to read.
   const burnVault = findContractAddress(activeChain.id, "BurnVault");
+  const stage2State = activeStage2State();
+  const burnOnline = Boolean(burnVault) && stage2State === "active";
   const burns = useBurnEvents();
   const burnedToDate = burns.data
     ? // $PINELY is an 18-decimal ERC-20; the indexer stores raw base units.
@@ -65,10 +68,16 @@ export default function BurnPage() {
         {/* BurnVault Command Telemetry Banner */}
         <div className="burn-telemetry-banner font-mono page-reveal-1">
           <div className="telemetry-banner-left">
-            <span className={`status-pill ${burnVault ? "active" : "standby"}`}>
-              <span className={`pulse-beacon ${burnVault ? "green" : "red"}`} />
+            <span className={`status-pill ${burnOnline ? "active" : "standby"}`}>
+              <span className={`pulse-beacon ${burnOnline ? "green" : "red"}`} />
               <span>
-                {burnVault ? "ONLINE · DEPLOYED (STAGE 2)" : "STANDBY · STAGE 2 REHEARSAL"}
+                {burnOnline
+                  ? "ONLINE · DEPLOYED (STAGE 2)"
+                  : burnVault
+                    ? stage2State === "connected"
+                      ? "CONNECTED · NO POOL YET (STAGE 2)"
+                      : "DEPLOYED · NOT ACTIVE YET (STAGE 2)"
+                    : "STANDBY · STAGE 2 REHEARSAL"}
               </span>
             </span>
             <div className="telemetry-contract-info">
@@ -126,7 +135,7 @@ export default function BurnPage() {
         </div>
 
         <section className="sec" style={{ paddingTop: "12px" }}>
-          {!burnVault && <Stage2Banner />}
+          <Stage2Banner />
           {/* Live tracker: only where BurnVault exists; otherwise the page says it is not live yet. */}
           {burnVault && <BurnTracker />}
 
@@ -549,8 +558,11 @@ export default function BurnPage() {
             <div style={{ display: "grid", gap: "4px", maxWidth: "560px" }}>
               <TokenCa variant="footer" />
               <p className="note" style={{ marginTop: "8px" }}>
-                STAGE 2 REHEARSAL · BurnVault and PinelyStake are not deployed on mainnet yet, so
-                nothing is burned or staked onchain today.
+                {stage2State === "connected"
+                  ? "STAGE 2 · BurnVault and PinelyStake are deployed and connected to the registry, but no pool exists yet, so nothing is burned or staked through this site today."
+                  : stage2State === "deployed-inactive"
+                    ? "STAGE 2 · BurnVault and PinelyStake are deployed on mainnet but not active yet, so nothing is burned or staked through them today."
+                    : "STAGE 2 REHEARSAL · BurnVault and PinelyStake are not deployed on mainnet yet, so nothing is burned or staked onchain today."}
               </p>
             </div>
             <div style={{ display: "flex", gap: "12px" }}>

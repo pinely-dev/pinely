@@ -7,6 +7,7 @@ export * from "./MockPinelyToken";
 export * from "./MockUSDG";
 export * from "./PinelyAccount";
 export * from "./PinelyAccountFactory";
+export * from "./PinelyBuybackExecutor";
 export * from "./PinelyHook";
 export * from "./PinelyPaymaster";
 export * from "./PinelyRouter";

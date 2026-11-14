@@ -66,8 +66,8 @@ export default function LegalPage() {
                   "an address that is not configured on this site"
                 )}
                 . Its price can go to zero. PINELY smart contracts have not been externally audited.
-                Stage 2 features (staking, burn, fee tiers) are not deployed and may change or never
-                launch. Nothing on this site is investment, legal or tax advice.
+                Stage 2 features (staking, burn, fee tiers) are deployed but not in use yet, and may
+                change or never be used. Nothing on this site is investment, legal or tax advice.
               </p>
             </div>
           </div>

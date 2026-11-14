@@ -132,8 +132,8 @@ export function FleetSavingsCalculator() {
 
               <div className="calc-note">
                 <span>
-                  To be enforced onchain via PinelyHook.sol & PinelyStake.sol (Stage 2, not
-                  deployed).
+                  To be enforced onchain via PinelyHook.sol & PinelyStake.sol (Stage 2, deployed but
+                  not in use yet).
                 </span>
               </div>
             </div>

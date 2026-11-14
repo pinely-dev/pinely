@@ -47,7 +47,17 @@ const STAGE_1_CONTRACTS = [
   "SurplusSweeper",
 ] as const;
 
-const STAGE_2_CONTRACTS = ["PinelyHook", "PinelyRouter", "BurnVault", "PinelyStake"] as const;
+// Every contract `DeployStage2` creates. Stage 2 only counts as live when all of them have an address.
+const STAGE_2_CONTRACTS = [
+  "PinelyHook",
+  "PinelyRouter",
+  "BurnVault",
+  "PinelyStake",
+  "CreatorFeeSplitter",
+  "FleetSubscription",
+  "PoolSeeder",
+  "PinelyBuybackExecutor",
+] as const;
 
 function deployedCount(names: readonly string[]): number {
   return names.filter((name) => findContractAddress(MAINNET_ID, name) !== undefined).length;
@@ -88,32 +98,107 @@ function token(): StatusEntry {
   };
 }
 
+/**
+ * HAND-SET facts about Stage 2, read from the chain on `checkedOn`. The address book cannot prove them:
+ * read them on-chain, then change them and `checkedOn`.
+ *  - `connected`: the PINELY Safe connected the contracts to MachineRegistry (`MachineRegistry.hook()`,
+ *    `stakeContract()` and `burnVault()` are set). Done in one Safe transaction on 2026-11-14, block 114078911.
+ *  - `poolsLive`: a machine pool (with PinelyHook) and the buyback pool exist and hold liquidity. Not yet.
+ */
+export const STAGE2_WIRING: { connected: boolean; poolsLive: boolean; checkedOn: string } = {
+  connected: true,
+  poolsLive: false,
+  checkedOn: "2026-11-14",
+};
+
+export type Stage2State = "not-deployed" | "deployed-inactive" | "connected" | "active";
+
+/** Where Stage 2 stands: no address yet, deployed, connected to the registry, or connected with pools in use. */
+export function stage2State(): Stage2State {
+  if (deployedCount(STAGE_2_CONTRACTS) < STAGE_2_CONTRACTS.length) return "not-deployed";
+  if (!STAGE2_WIRING.connected) return "deployed-inactive";
+  return STAGE2_WIRING.poolsLive ? "active" : "connected";
+}
+
 function stage2(): StatusEntry {
   const count = deployedCount(STAGE_2_CONTRACTS);
-  const level: StatusLevel =
-    count === 0 ? "not-deployed" : count === STAGE_2_CONTRACTS.length ? "live" : "pending";
+  const state = stage2State();
+  const label = "Stage 2 (Hook, Router, Burn, Stake, Billing)";
+  if (state === "deployed-inactive") {
+    return {
+      id: "stage2",
+      label,
+      level: "pending",
+      source: "hand-set",
+      detail:
+        "All eight Stage 2 contracts are deployed on mainnet, but the PINELY Safe has not connected them to MachineRegistry yet, so nothing uses them and nothing is staked or burned through this site. Unaudited.",
+    };
+  }
+  if (state === "connected") {
+    return {
+      id: "stage2",
+      label,
+      level: "pending",
+      source: "hand-set",
+      detail: `All eight Stage 2 contracts are deployed and the PINELY Safe connected them to MachineRegistry (checked ${STAGE2_WIRING.checkedOn}). No machine pool and no buyback pool exist yet, so PinelyHook enforces nothing and nothing is burned. This site offers no staking or burning actions. Unaudited.`,
+    };
+  }
+  if (state === "active") {
+    return {
+      id: "stage2",
+      label,
+      level: "live",
+      source: "hand-set",
+      detail: `The Stage 2 contracts are connected to MachineRegistry and their pools exist (checked ${STAGE2_WIRING.checkedOn}). Unaudited.`,
+    };
+  }
   return {
     id: "stage2",
-    label: "Stage 2 (Hook, Router, Burn, Stake)",
-    level,
+    label,
+    level: count === 0 ? "not-deployed" : "pending",
     source: "derived",
     detail:
-      level === "not-deployed"
-        ? "PinelyHook, PinelyRouter, BurnVault and PinelyStake are not deployed on mainnet. Nothing is staked or burned onchain."
+      count === 0
+        ? "The eight Stage 2 contracts (PinelyHook, PinelyRouter, BurnVault, PinelyStake, CreatorFeeSplitter, FleetSubscription, PoolSeeder and PinelyBuybackExecutor) are not deployed on mainnet. Nothing is staked or burned onchain."
         : `${count} of ${STAGE_2_CONTRACTS.length} Stage 2 contracts have a mainnet address.`,
   };
 }
 
 function spendCap(): StatusEntry {
-  const hookLive = findContractAddress(MAINNET_ID, "PinelyHook") !== undefined;
+  const state = stage2State();
+  const base = { id: "spend-cap-onchain", label: "Onchain spend cap" } as const;
+  if (state === "active") {
+    return {
+      ...base,
+      level: "live",
+      source: "hand-set",
+      detail: "The daily limit is enforced onchain by PinelyHook.",
+    };
+  }
+  if (state === "connected") {
+    return {
+      ...base,
+      level: "pending",
+      source: "hand-set",
+      detail:
+        "PinelyHook is connected to MachineRegistry, but no machine pool exists yet, so no swap happens and no daily limit is enforced onchain yet.",
+    };
+  }
+  if (state === "deployed-inactive") {
+    return {
+      ...base,
+      level: "pending",
+      source: "hand-set",
+      detail:
+        "PinelyHook is deployed, but the Safe has not connected it to MachineRegistry yet, so no daily limit is enforced onchain.",
+    };
+  }
   return {
-    id: "spend-cap-onchain",
-    label: "Onchain spend cap",
-    level: hookLive ? "live" : "not-deployed",
+    ...base,
+    level: "not-deployed",
     source: "derived",
-    detail: hookLive
-      ? "The daily limit is enforced onchain by PinelyHook."
-      : "Stage 1 has no onchain spend cap. The daily limit is enforced by PinelyHook, which is a Stage 2 contract.",
+    detail:
+      "Stage 1 has no onchain spend cap. The daily limit is enforced by PinelyHook, which is a Stage 2 contract.",
   };
 }
 
@@ -176,6 +261,15 @@ export const MAINNET_CONTRACT_OWNERS: Record<string, "safe" | "none"> = {
   PinelyPaymaster: "safe",
   PinelyAccountFactory: "none",
   SurplusSweeper: "none",
+  // Stage 2, deployed 2026-11-14 (owners read from the chain that day).
+  BurnVault: "safe",
+  PinelyStake: "safe",
+  PoolSeeder: "safe",
+  PinelyHook: "none",
+  PinelyRouter: "none",
+  FleetSubscription: "none",
+  CreatorFeeSplitter: "none",
+  PinelyBuybackExecutor: "none",
 };
 
 /** Safe multisig that owns the protocol contracts: `getThreshold()` and the number of owners, read on STATUS_AS_OF. */

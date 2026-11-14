@@ -72,9 +72,10 @@ contract MockPoolManager {
         int128 delta1;
 
         if (invertDelta) {
-            // Canonical Uniswap v4 PoolManager convention:
-            // Input token (paid by user to pool) is positive delta.
-            // Output token (paid by pool to user) is negative delta.
+            // INVERTED sign mode. The real Uniswap v4 PoolManager returns the opposite for an exact-input swap:
+            // the caller owes the input (negative delta) and is owed the output (positive delta). That was verified
+            // against the real PoolManager (Stage2RealPoolManagerFork, PinelyBuybackExecutor tests). This mode only
+            // proves that the Router and the Hook read absolute values and so tolerate either sign.
             delta0 = params.zeroForOne ? int128(inAmount) : -int128(outAmount);
             delta1 = params.zeroForOne ? -int128(outAmount) : int128(inAmount);
         } else {
@@ -443,6 +444,29 @@ contract PinelyRouterAndHookTest is Test {
         vm.stopPrank();
     }
 
+    /// @notice The signed intent names the tokens; a request that swaps the other way round must be refused.
+    function test_Router_RevertIf_DirectionContradictsTheIntent() public {
+        IPinelyRouter.SwapRequest memory req = _buildSwapRequest(10e18, 9e18, 1, signerPrivateKey);
+        req.zeroForOne = !req.zeroForOne;
+
+        vm.startPrank(machineAccount);
+        tokenIn.approve(address(router), 10e18);
+        vm.expectRevert(IPinelyRouter.TokenMismatch.selector);
+        router.swap(req);
+        vm.stopPrank();
+    }
+
+    function test_Router_RevertIf_ConstructedWithAZeroAddress() public {
+        vm.expectRevert(IPinelyRouter.ZeroAddress.selector);
+        new PinelyRouter(address(0), address(registry), address(hook), address(usdc));
+        vm.expectRevert(IPinelyRouter.ZeroAddress.selector);
+        new PinelyRouter(address(poolManager), address(0), address(hook), address(usdc));
+        vm.expectRevert(IPinelyRouter.ZeroAddress.selector);
+        new PinelyRouter(address(poolManager), address(registry), address(0), address(usdc));
+        vm.expectRevert(IPinelyRouter.ZeroAddress.selector);
+        new PinelyRouter(address(poolManager), address(registry), address(hook), address(0));
+    }
+
     function test_Router_RevertIf_SlippageExceeded() public {
         // Minimum out set higher than swap return (15 USDC for 10 input)
         IPinelyRouter.SwapRequest memory req = _buildSwapRequest(10e18, 15e18, 1, signerPrivateKey);
@@ -521,6 +545,39 @@ contract PinelyRouterAndHookTest is Test {
         assertEq(selector, hook.beforeAddLiquidity.selector);
     }
 
+    /// @notice Removing liquidity is gated like adding it: the treasury, the router and authorised LPs only.
+    function test_Hook_RemoveLiquidity_AuthorisedParties() public {
+        ModifyLiquidityParams memory params =
+            ModifyLiquidityParams({tickLower: -60, tickUpper: 60, liquidityDelta: -1000, salt: bytes32(0)});
+        address lp = address(0x1122);
+
+        // The treasury and the router may always remove liquidity.
+        vm.startPrank(address(poolManager));
+        assertEq(hook.beforeRemoveLiquidity(treasury, poolKey, params, ""), hook.beforeRemoveLiquidity.selector);
+        assertEq(hook.beforeRemoveLiquidity(address(router), poolKey, params, ""), hook.beforeRemoveLiquidity.selector);
+        vm.stopPrank();
+
+        // An LP can remove only while it is authorised, and loses that right when the treasury revokes it.
+        vm.prank(treasury);
+        hook.setAuthorizedLp(lp, true);
+        vm.prank(address(poolManager));
+        assertEq(hook.beforeRemoveLiquidity(lp, poolKey, params, ""), hook.beforeRemoveLiquidity.selector);
+
+        vm.prank(treasury);
+        hook.setAuthorizedLp(lp, false);
+        vm.prank(address(poolManager));
+        vm.expectRevert(IPinelyHook.UnauthorizedLp.selector);
+        hook.beforeRemoveLiquidity(lp, poolKey, params, "");
+    }
+
+    /// @notice Only the treasury (or the router, which has no way to call it) can change who may provide liquidity.
+    function test_Hook_SetAuthorizedLp_OnlyTreasury() public {
+        vm.prank(stranger);
+        vm.expectRevert(IPinelyHook.NotRouter.selector);
+        hook.setAuthorizedLp(stranger, true);
+        assertFalse(hook.isAuthorizedLp(stranger));
+    }
+
     // --- Slippage Griefing Zero minAmountOut Protection ---
 
     function test_Router_ZeroMinAmountOutReverts() public {
@@ -533,7 +590,7 @@ contract PinelyRouterAndHookTest is Test {
         vm.stopPrank();
     }
 
-    // --- Canonical Uniswap v4 Negative Output Delta Convention ---
+    // --- Inverted delta signs are tolerated (the real PoolManager uses the other convention, see MockPoolManager) ---
 
     function test_RouterAndHook_Swap_CanonicalUniswapV4NegativeDelta() public {
         poolManager.setInvertDelta(true);

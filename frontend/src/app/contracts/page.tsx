@@ -3,11 +3,16 @@
 import { useState } from "react";
 import { robinhoodMainnet, robinhoodTestnet } from "@pinely/shared/chains";
 import { findContractAddress, findDeployTx } from "@pinely/shared/contracts";
-import { MAINNET_CONTRACT_OWNERS, PROTOCOL_SAFE, STATUS_AS_OF } from "@pinely/shared/status";
+import {
+  MAINNET_CONTRACT_OWNERS,
+  PROTOCOL_SAFE,
+  STAGE2_WIRING,
+  STATUS_AS_OF,
+} from "@pinely/shared/status";
 import { Navbar } from "@/components/pinely/Navbar";
 import { PageBackground } from "@/components/pinely/PageBackground";
 import { Footer } from "@/components/pinely/Footer";
-import { StageBadge } from "@/components/pinely/StageBadge";
+import { StageBadge, Stage2ContractBadge } from "@/components/pinely/StageBadge";
 
 type Network = "mainnet" | "testnet";
 
@@ -64,6 +69,26 @@ const STAGE_2: Entry[] = [
     name: "PinelyStake",
     key: "PinelyStake",
     note: "Reputation staking with a 7-day unbonding period",
+  },
+  {
+    name: "CreatorFeeSplitter",
+    key: "CreatorFeeSplitter",
+    note: "Splits the launchpad creator fee 30/70 without custody",
+  },
+  {
+    name: "FleetSubscription",
+    key: "FleetSubscription",
+    note: "Billing for the Fleet Pro plan and SDK device licences",
+  },
+  {
+    name: "PoolSeeder",
+    key: "PoolSeeder",
+    note: "Initialises and seeds the PINELY Uniswap v4 pools",
+  },
+  {
+    name: "PinelyBuybackExecutor",
+    key: "PinelyBuybackExecutor",
+    note: "The only swap path of the BurnVault: one fixed pool, output sent to the vault",
   },
 ];
 
@@ -219,7 +244,7 @@ export default function ContractsPage() {
 
           <h2 style={{ fontSize: "20px", margin: "0 0 12px" }}>PINELY contracts (Stage 1)</h2>
           <div className="tw" role="region" aria-label="Stage 1 contracts" tabIndex={0}>
-            <table className="tbl font-mono">
+            <table className="tbl tbl-stack font-mono">
               <thead>
                 <tr>
                   <th scope="col">Contract</th>
@@ -234,7 +259,7 @@ export default function ContractsPage() {
                   const tx = findDeployTx(chain.id, entry.key);
                   return (
                     <tr key={entry.key}>
-                      <td>
+                      <td data-label="Contract">
                         <strong style={{ color: "#ffffff" }}>{entry.name}</strong>
                         <div
                           style={{ color: "var(--mut-light)", fontSize: "12px", marginTop: "4px" }}
@@ -242,10 +267,10 @@ export default function ContractsPage() {
                           {entry.note}
                         </div>
                       </td>
-                      <td>
+                      <td data-label="Address">
                         {value ? renderAddress(entry, value) : "Not deployed on this network"}
                       </td>
-                      <td>
+                      <td data-label="Deploy transaction">
                         {tx ? (
                           <a
                             href={`${explorer}/tx/${tx}`}
@@ -260,7 +285,7 @@ export default function ContractsPage() {
                           "Not available"
                         )}
                       </td>
-                      <td>{ownerCell(entry.key)}</td>
+                      <td data-label="Owner">{ownerCell(entry.key)}</td>
                     </tr>
                   );
                 })}
@@ -281,7 +306,7 @@ export default function ContractsPage() {
             aria-label="Safe, token and infrastructure"
             tabIndex={0}
           >
-            <table className="tbl font-mono">
+            <table className="tbl tbl-stack font-mono">
               <thead>
                 <tr>
                   <th scope="col">Name</th>
@@ -294,17 +319,22 @@ export default function ContractsPage() {
                   const value = address(entry.key);
                   return (
                     <tr key={entry.key}>
-                      <td>
+                      <td data-label="Name">
                         <strong style={{ color: "#ffffff" }}>{entry.name}</strong>
                       </td>
-                      <td>
+                      <td data-label="Address">
                         {value
                           ? renderAddress(entry, value)
                           : entry.key === "PINELY"
                             ? "Mainnet only"
                             : "Not on this network"}
                       </td>
-                      <td style={{ color: "var(--mut-light)", fontSize: "12px" }}>{entry.note}</td>
+                      <td
+                        data-label="What it is"
+                        style={{ color: "var(--mut-light)", fontSize: "12px" }}
+                      >
+                        {entry.note}
+                      </td>
                     </tr>
                   );
                 })}
@@ -313,21 +343,31 @@ export default function ContractsPage() {
           </div>
 
           <h2 style={{ fontSize: "20px", margin: "36px 0 12px" }}>Stage 2 contracts</h2>
+          <p className="note" style={{ margin: "0 0 12px", maxWidth: "78ch" }}>
+            {STAGE2_WIRING.poolsLive
+              ? `The Stage 2 contracts are connected to MachineRegistry and their pools exist (checked ${STAGE2_WIRING.checkedOn}). The contracts are unaudited.`
+              : STAGE2_WIRING.connected
+                ? `The Stage 2 contracts are deployed and the PINELY Safe connected them to MachineRegistry (checked ${STAGE2_WIRING.checkedOn}). No machine pool and no buyback pool exist yet, so nothing is swapped or burned. The contracts are unaudited.`
+                : `The Stage 2 contracts are deployed but not active yet: the PINELY Safe has not connected them to MachineRegistry (checked ${STAGE2_WIRING.checkedOn}). The contracts are unaudited.`}
+          </p>
           <div className="tw" role="region" aria-label="Stage 2 contracts" tabIndex={0}>
-            <table className="tbl font-mono">
+            <table className="tbl tbl-stack font-mono">
               <thead>
                 <tr>
                   <th scope="col">Contract</th>
                   <th scope="col">Status</th>
                   <th scope="col">Address</th>
+                  <th scope="col">Deploy transaction</th>
+                  <th scope="col">Owner</th>
                 </tr>
               </thead>
               <tbody>
                 {STAGE_2.map((entry) => {
                   const value = address(entry.key);
+                  const tx = findDeployTx(chain.id, entry.key);
                   return (
                     <tr key={entry.key}>
-                      <td>
+                      <td data-label="Contract">
                         <strong style={{ color: "#ffffff" }}>{entry.name}</strong>
                         <div
                           style={{ color: "var(--mut-light)", fontSize: "12px", marginTop: "4px" }}
@@ -335,14 +375,36 @@ export default function ContractsPage() {
                           {entry.note}
                         </div>
                       </td>
-                      <td>
+                      <td data-label="Status">
                         {value ? (
-                          <StageBadge variant={network === "mainnet" ? "live" : "testnet"} />
+                          network === "mainnet" ? (
+                            <Stage2ContractBadge />
+                          ) : (
+                            <StageBadge variant="testnet" />
+                          )
                         ) : (
                           <StageBadge variant="stage2" />
                         )}
                       </td>
-                      <td>{value ? renderAddress(entry, value) : "Not deployed"}</td>
+                      <td data-label="Address">
+                        {value ? renderAddress(entry, value) : "Not deployed"}
+                      </td>
+                      <td data-label="Deploy transaction">
+                        {tx ? (
+                          <a
+                            href={`${explorer}/tx/${tx}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={tx}
+                            style={{ textDecoration: "underline" }}
+                          >
+                            {shortHash(tx)}
+                          </a>
+                        ) : (
+                          "Not available"
+                        )}
+                      </td>
+                      <td data-label="Owner">{value ? ownerCell(entry.key) : "n/a"}</td>
                     </tr>
                   );
                 })}

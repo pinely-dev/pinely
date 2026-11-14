@@ -42,7 +42,7 @@ const SCENARIOS: Scenario[] = [
   {
     colSpan: "bento-span-12",
     tag: "ANTI-THEFT PROTOCOL",
-    timestamp: "FAIL-CLOSED DEFENSE · STAGE 2 · NOT DEPLOYED",
+    timestamp: "FAIL-CLOSED DEFENSE · STAGE 2 · NOT IN USE YET",
     title: "The stolen drone and the daily limit",
     description:
       "A rogue actor physically captures an aerial courier drone and extracts memory flash. When attempting to drain the smart account treasury, the transaction would revert onchain, because the $50 daily limit would be enforced by PinelyHook.sol (Stage 2, not deployed). The fleet manager fires the 1-Tx Kill Switch, which freezes the machine until the operator unfreezes it.",

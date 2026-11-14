@@ -34,7 +34,6 @@ contract FleetSubscription is IFleetSubscription, ReentrancyGuard {
 
     mapping(bytes32 => FleetSubscriptionInfo) public fleetProSubscriptions;
     mapping(bytes32 => FleetSubscriptionInfo) public sdkDeviceSubscriptions;
-    mapping(bytes32 => address) public fleetOwners;
 
     constructor(address _stablecoin, address _burnVault, address _treasury) {
         if (_stablecoin == address(0) || _burnVault == address(0) || _treasury == address(0)) {
@@ -54,18 +53,24 @@ contract FleetSubscription is IFleetSubscription, ReentrancyGuard {
     }
 
     /**
-     * @notice Subscribes to or renews the Fleet Pro plan ($99/fleet/month).
-     * @param fleetId Unique fleet ID.
+     * @notice The id of the fleet that `owner` names `salt`.
+     * @dev Fleet ids are namespaced by their owner: the id is derived from the caller, so nobody can claim an id
+     *      that another operator will use (a free-form id could be taken for the price of one device-month). One
+     *      operator can still run any number of fleets by using different salts.
+     */
+    function fleetIdOf(address owner, bytes32 salt) public pure override returns (bytes32) {
+        return keccak256(abi.encode(owner, salt));
+    }
+
+    /**
+     * @notice Subscribes to or renews the Fleet Pro plan ($99/fleet/month) for the caller's fleet `salt`.
+     * @param salt Name of the fleet inside the caller's namespace; the fleet id is `fleetIdOf(msg.sender, salt)`.
      * @param months Number of months paid upfront (minimum 1).
      */
-    function subscribeFleetPro(bytes32 fleetId, uint256 months) external override nonReentrant {
-        if (fleetId == bytes32(0) || months == 0) revert InvalidAmount();
+    function subscribeFleetPro(bytes32 salt, uint256 months) external override nonReentrant {
+        if (months == 0) revert InvalidAmount();
 
-        if (fleetOwners[fleetId] == address(0)) {
-            fleetOwners[fleetId] = msg.sender;
-        } else if (fleetOwners[fleetId] != msg.sender) {
-            revert NotFleetOwner();
-        }
+        bytes32 fleetId = fleetIdOf(msg.sender, salt);
 
         uint256 cost = months * FLEET_PRO_MONTHLY_RATE * unitScale;
         _chargeAndDistribute(cost);
@@ -80,18 +85,14 @@ contract FleetSubscription is IFleetSubscription, ReentrancyGuard {
 
     /**
      * @notice Pays for or renews Pinely SDK device licence quota ($1/device/month).
-     * @param fleetId Unique ID of the fleet that owns the devices.
+     * @param salt Name of the fleet inside the caller's namespace; the fleet id is `fleetIdOf(msg.sender, salt)`.
      * @param deviceCount Number of licensed devices.
      * @param months Licence duration in months (minimum 1).
      */
-    function subscribeDevices(bytes32 fleetId, uint256 deviceCount, uint256 months) external override nonReentrant {
-        if (fleetId == bytes32(0) || deviceCount == 0 || months == 0) revert InvalidAmount();
+    function subscribeDevices(bytes32 salt, uint256 deviceCount, uint256 months) external override nonReentrant {
+        if (deviceCount == 0 || months == 0) revert InvalidAmount();
 
-        if (fleetOwners[fleetId] == address(0)) {
-            fleetOwners[fleetId] = msg.sender;
-        } else if (fleetOwners[fleetId] != msg.sender) {
-            revert NotFleetOwner();
-        }
+        bytes32 fleetId = fleetIdOf(msg.sender, salt);
 
         FleetSubscriptionInfo storage sub = sdkDeviceSubscriptions[fleetId];
         // Prevent downgrading activeDevices while the licence period has not ended

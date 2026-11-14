@@ -114,10 +114,15 @@ export const fleetSubscriptionAbi = [
   },
   {
     type: "function",
-    name: "fleetOwners",
+    name: "fleetIdOf",
     inputs: [
       {
-        name: "",
+        name: "owner",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "salt",
         type: "bytes32",
         internalType: "bytes32",
       },
@@ -125,11 +130,11 @@ export const fleetSubscriptionAbi = [
     outputs: [
       {
         name: "",
-        type: "address",
-        internalType: "address",
+        type: "bytes32",
+        internalType: "bytes32",
       },
     ],
-    stateMutability: "view",
+    stateMutability: "pure",
   },
   {
     type: "function",
@@ -317,7 +322,7 @@ export const fleetSubscriptionAbi = [
     name: "subscribeDevices",
     inputs: [
       {
-        name: "fleetId",
+        name: "salt",
         type: "bytes32",
         internalType: "bytes32",
       },
@@ -340,7 +345,7 @@ export const fleetSubscriptionAbi = [
     name: "subscribeFleetPro",
     inputs: [
       {
-        name: "fleetId",
+        name: "salt",
         type: "bytes32",
         internalType: "bytes32",
       },
@@ -513,11 +518,6 @@ export const fleetSubscriptionAbi = [
   {
     type: "error",
     name: "InvalidAmount",
-    inputs: [],
-  },
-  {
-    type: "error",
-    name: "NotFleetOwner",
     inputs: [],
   },
   {
